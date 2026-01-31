@@ -600,6 +600,56 @@ FINANCIERING_DATA = {
     ]
 }
 
+# Cashflow Forecasting Data
+CASHFLOW_DATA = {
+    "current_cash": 87500,
+    "credit_available": 50000,
+    "credit_used": 12000,
+    
+    # Bekende inkomsten (uit openstaande facturen, CRM pipeline, etc.)
+    "expected_inflows": [
+        {"maand": "Feb", "bron": "Factuur #2024-089 (Gemeente)", "bedrag": 24200, "kans": 95, "categorie": "Debiteuren"},
+        {"maand": "Feb", "bron": "Project Amstelveen", "bedrag": 35000, "kans": 90, "categorie": "Projecten"},
+        {"maand": "Mrt", "bron": "Factuur #2024-091", "bedrag": 8500, "kans": 100, "categorie": "Debiteuren"},
+        {"maand": "Mrt", "bron": "CRM: Villa Wassenaar (aanbetaling)", "bedrag": 45000, "kans": 75, "categorie": "CRM Pipeline"},
+        {"maand": "Apr", "bron": "Terugkerend: Onderhoud contracts", "bedrag": 12000, "kans": 100, "categorie": "Recurring"},
+        {"maand": "Mei", "bron": "CRM: Kantoor Schiphol", "bedrag": 28000, "kans": 40, "categorie": "CRM Pipeline"},
+    ],
+    
+    # Bekende uitgaven
+    "expected_outflows": [
+        {"maand": "Feb", "bron": "Salarissen", "bedrag": 28500, "categorie": "Personeel", "recurring": True},
+        {"maand": "Feb", "bron": "BTW Q4 afdracht", "bedrag": 18750, "categorie": "Belastingen", "recurring": False},
+        {"maand": "Feb", "bron": "Huur & utilities", "bedrag": 4200, "categorie": "Huisvesting", "recurring": True},
+        {"maand": "Feb", "bron": "Crediteuren (leveranciers)", "bedrag": 15600, "categorie": "Inkoop", "recurring": False},
+        {"maand": "Mrt", "bron": "Salarissen", "bedrag": 28500, "categorie": "Personeel", "recurring": True},
+        {"maand": "Mrt", "bron": "Huur & utilities", "bedrag": 4200, "categorie": "Huisvesting", "recurring": True},
+        {"maand": "Mrt", "bron": "Voorlopige aanslag Vpb", "bedrag": 8500, "categorie": "Belastingen", "recurring": False},
+        {"maand": "Mrt", "bron": "Leaseauto's", "bedrag": 3200, "categorie": "Vervoer", "recurring": True},
+        {"maand": "Apr", "bron": "Salarissen", "bedrag": 28500, "categorie": "Personeel", "recurring": True},
+        {"maand": "Apr", "bron": "BTW Q1 afdracht", "bedrag": 14200, "categorie": "Belastingen", "recurring": False},
+        {"maand": "Apr", "bron": "Huur & utilities", "bedrag": 4200, "categorie": "Huisvesting", "recurring": True},
+        {"maand": "Mei", "bron": "Salarissen", "bedrag": 28500, "categorie": "Personeel", "recurring": True},
+        {"maand": "Mei", "bron": "Huur & utilities", "bedrag": 4200, "categorie": "Huisvesting", "recurring": True},
+        {"maand": "Jun", "bron": "Salarissen", "bedrag": 28500, "categorie": "Personeel", "recurring": True},
+        {"maand": "Jun", "bron": "Aflossing bedrijfskrediet", "bedrag": 5000, "categorie": "Financiering", "recurring": True},
+    ],
+    
+    # Maandelijks saldo prognose
+    "monthly_forecast": [
+        {"maand": "Jan", "begin_saldo": 87500, "inkomsten": 0, "uitgaven": 0, "eind_saldo": 87500, "type": "actueel"},
+        {"maand": "Feb", "begin_saldo": 87500, "inkomsten": 59200, "uitgaven": 67050, "eind_saldo": 79650, "type": "forecast"},
+        {"maand": "Mrt", "begin_saldo": 79650, "inkomsten": 53500, "uitgaven": 44400, "eind_saldo": 88750, "type": "forecast"},
+        {"maand": "Apr", "begin_saldo": 88750, "inkomsten": 12000, "uitgaven": 46900, "eind_saldo": 53850, "type": "forecast"},
+        {"maand": "Mei", "begin_saldo": 53850, "inkomsten": 28000, "uitgaven": 32700, "eind_saldo": 49150, "type": "forecast"},
+        {"maand": "Jun", "begin_saldo": 49150, "inkomsten": 45000, "uitgaven": 33500, "eind_saldo": 60650, "type": "forecast"},
+    ],
+    
+    # Minimum cash buffer
+    "min_buffer": 30000,
+    "warning_buffer": 50000,
+}
+
 # Vennootschapsbelasting Data
 VPB_DATA = {
     "boekjaar": "2024",
@@ -745,7 +795,7 @@ with st.sidebar:
             "🏗️ Investeringen": "investments",
             "🤖 AI Agents": "agents",
             "💬 Chat met ALEX": "chat",
-            "📈 Forecasting": "forecast"
+            "📈 Cashflow & Forecasting": "forecast"
         }
         
         for label, view in nav_options.items():
@@ -1429,65 +1479,296 @@ else:  # portal_mode == 'klant'
             st.rerun()
 
     elif st.session_state.current_view == 'forecast':
-        st.title("📈 Forecasting & Scenario's")
+        st.title("📈 Forecasting & Cashflow")
         st.markdown(f"**{current_client['name']}** | Powered by LUNA")
         
-        # Forecast chart
-        st.markdown("### 📊 Omzet Prognose")
+        # Tabs for different forecast views
+        forecast_tab = st.radio("", ["💰 Cashflow", "📊 Omzet", "✏️ Eigen Input"], horizontal=True, key="forecast_tabs")
         
-        months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
-        actual = [45000, 52000, 48000, None, None, None, None, None, None, None, None, None]
-        forecast = [45000, 52000, 48000, 55000, 58000, 62000, 65000, 63000, 68000, 72000, 70000, 75000]
-        optimistic = [45000, 52000, 48000, 58000, 63000, 68000, 72000, 70000, 76000, 82000, 80000, 88000]
-        pessimistic = [45000, 52000, 48000, 52000, 53000, 55000, 56000, 54000, 58000, 60000, 58000, 62000]
+        if forecast_tab == "💰 Cashflow":
+            # Current cash position
+            st.markdown("### 💰 Huidige Liquiditeitspositie")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Banksaldo", format_currency(CASHFLOW_DATA["current_cash"]))
+            with col2:
+                credit_free = CASHFLOW_DATA["credit_available"] - CASHFLOW_DATA["credit_used"]
+                st.metric("Kredietruimte", format_currency(credit_free))
+            with col3:
+                total_liquidity = CASHFLOW_DATA["current_cash"] + credit_free
+                st.metric("Totale Liquiditeit", format_currency(total_liquidity))
+            with col4:
+                buffer_status = "✅ OK" if CASHFLOW_DATA["current_cash"] > CASHFLOW_DATA["warning_buffer"] else "⚠️ Let op"
+                st.metric("Buffer Status", buffer_status)
+            
+            # Cashflow forecast graph
+            st.markdown("### 📈 Cashflow Prognose (6 maanden)")
+            
+            months = [m["maand"] for m in CASHFLOW_DATA["monthly_forecast"]]
+            saldi = [m["eind_saldo"] for m in CASHFLOW_DATA["monthly_forecast"]]
+            inkomsten = [m["inkomsten"] for m in CASHFLOW_DATA["monthly_forecast"]]
+            uitgaven = [-m["uitgaven"] for m in CASHFLOW_DATA["monthly_forecast"]]
+            
+            fig = go.Figure()
+            fig.add_trace(go.Bar(x=months, y=inkomsten, name='Inkomsten', marker_color='#10b981'))
+            fig.add_trace(go.Bar(x=months, y=uitgaven, name='Uitgaven', marker_color='#ef4444'))
+            fig.add_trace(go.Scatter(x=months, y=saldi, name='Banksaldo', line=dict(color='#0f172a', width=3), yaxis='y2'))
+            # Warning line
+            fig.add_hline(y=CASHFLOW_DATA["warning_buffer"], line_dash="dash", line_color="#f59e0b", annotation_text="Warning buffer", yaxis='y2')
+            fig.add_hline(y=CASHFLOW_DATA["min_buffer"], line_dash="dash", line_color="#ef4444", annotation_text="Min buffer", yaxis='y2')
+            
+            fig.update_layout(
+                barmode='relative',
+                yaxis=dict(title="Cashflow (€)", side='left'),
+                yaxis2=dict(title="Banksaldo (€)", overlaying='y', side='right'),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02),
+                margin=dict(t=40, b=20),
+                height=400
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # LUNA insight
+            min_saldo = min(m["eind_saldo"] for m in CASHFLOW_DATA["monthly_forecast"])
+            min_maand = next(m["maand"] for m in CASHFLOW_DATA["monthly_forecast"] if m["eind_saldo"] == min_saldo)
+            
+            if min_saldo < CASHFLOW_DATA["warning_buffer"]:
+                alert_color = "#f59e0b" if min_saldo > CASHFLOW_DATA["min_buffer"] else "#ef4444"
+                st.markdown(f"""
+                <div class="agent-card" style="border-left: 4px solid {alert_color};">
+                    <strong style="color: {alert_color};">⚠️ LUNA - Cashflow Alert</strong>
+                    <p style="margin: 8px 0 0 0;">In <strong>{min_maand}</strong> daalt het saldo naar <strong>{format_currency(min_saldo)}</strong> - onder de aanbevolen buffer van {format_currency(CASHFLOW_DATA['warning_buffer'])}.</p>
+                    <p style="color: #64748b;">Suggestie: Versnelde incasso van openstaande debiteuren of tijdelijke kredietbenutting.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div class="agent-card agent-luna">
+                    <strong style="color: #3b82f6;">🔮 LUNA - Cashflow Analyse</strong>
+                    <p style="margin: 8px 0 0 0;">Gezonde liquiditeitspositie verwacht. Laagste punt: <strong>{format_currency(min_saldo)}</strong> in {min_maand}.</p>
+                    <p style="color: #64748b;">De cashflow blijft boven de aanbevolen buffer - geen actie nodig.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            
+            # Expected inflows and outflows
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("### 📥 Verwachte Inkomsten")
+                for item in CASHFLOW_DATA["expected_inflows"]:
+                    kans_color = "#10b981" if item["kans"] >= 90 else "#f59e0b" if item["kans"] >= 60 else "#94a3b8"
+                    st.markdown(f"""
+                    <div class="invoice-row">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>{item['bron']}</strong>
+                                <p style="color: #64748b; margin: 4px 0; font-size: 12px;">{item['categorie']} • {item['maand']} 2025</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-weight: 700; color: #10b981;">{format_currency(item['bedrag'])}</span>
+                                <p style="color: {kans_color}; font-size: 12px; margin: 4px 0;">{item['kans']}% kans</p>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("### 📤 Verwachte Uitgaven")
+                # Group by month
+                current_month = ""
+                for item in CASHFLOW_DATA["expected_outflows"][:8]:  # Show first 8
+                    recurring_badge = " 🔄" if item.get("recurring") else ""
+                    st.markdown(f"""
+                    <div class="invoice-row">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>{item['bron']}{recurring_badge}</strong>
+                                <p style="color: #64748b; margin: 4px 0; font-size: 12px;">{item['categorie']} • {item['maand']} 2025</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-weight: 700; color: #ef4444;">-{format_currency(item['bedrag'])}</span>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
         
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=months, y=actual, name='Actueel', line=dict(color='#0f172a', width=3)))
-        fig.add_trace(go.Scatter(x=months, y=forecast, name='Forecast', line=dict(color='#14b8a6', width=2, dash='dash')))
-        fig.add_trace(go.Scatter(x=months, y=optimistic, name='Optimistisch', line=dict(color='#10b981', width=1, dash='dot')))
-        fig.add_trace(go.Scatter(x=months, y=pessimistic, name='Pessimistisch', line=dict(color='#ef4444', width=1, dash='dot')))
+        elif forecast_tab == "📊 Omzet":
+            # Original revenue forecast
+            st.markdown("### 📊 Omzet Prognose")
+            
+            months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+            actual = [45000, 52000, 48000, None, None, None, None, None, None, None, None, None]
+            forecast = [45000, 52000, 48000, 55000, 58000, 62000, 65000, 63000, 68000, 72000, 70000, 75000]
+            optimistic = [45000, 52000, 48000, 58000, 63000, 68000, 72000, 70000, 76000, 82000, 80000, 88000]
+            pessimistic = [45000, 52000, 48000, 52000, 53000, 55000, 56000, 54000, 58000, 60000, 58000, 62000]
+            
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=months, y=actual, name='Actueel', line=dict(color='#0f172a', width=3)))
+            fig.add_trace(go.Scatter(x=months, y=forecast, name='Forecast', line=dict(color='#14b8a6', width=2, dash='dash')))
+            fig.add_trace(go.Scatter(x=months, y=optimistic, name='Optimistisch', line=dict(color='#10b981', width=1, dash='dot')))
+            fig.add_trace(go.Scatter(x=months, y=pessimistic, name='Pessimistisch', line=dict(color='#ef4444', width=1, dash='dot')))
+            
+            fig.update_layout(
+                xaxis_title="", yaxis_title="Omzet (€)",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02),
+                margin=dict(t=40, b=20),
+                height=350
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Scenario cards
+            st.markdown("### 🎯 Scenario Analyse")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("""
+                <div class="metric-card" style="border-left: 4px solid #10b981;">
+                    <h4 style="color: #10b981;">Optimistisch</h4>
+                    <p class="metric-value">€ 788.000</p>
+                    <p class="metric-label">Jaaromzet prognose</p>
+                    <p style="color: #10b981;">+28% vs. vorig jaar</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("""
+                <div class="metric-card" style="border-left: 4px solid #14b8a6;">
+                    <h4 style="color: #14b8a6;">Basis</h4>
+                    <p class="metric-value">€ 713.000</p>
+                    <p class="metric-label">Jaaromzet prognose</p>
+                    <p style="color: #14b8a6;">+16% vs. vorig jaar</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown("""
+                <div class="metric-card" style="border-left: 4px solid #ef4444;">
+                    <h4 style="color: #ef4444;">Pessimistisch</h4>
+                    <p class="metric-value">€ 638.000</p>
+                    <p class="metric-label">Jaaromzet prognose</p>
+                    <p style="color: #64748b;">+4% vs. vorig jaar</p>
+                </div>
+                """, unsafe_allow_html=True)
         
-        fig.update_layout(
-            xaxis_title="", yaxis_title="Omzet (€)",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02),
-            margin=dict(t=40, b=20),
-            height=350
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Scenario cards
-        st.markdown("### 🎯 Scenario Analyse")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown("""
-            <div class="metric-card" style="border-left: 4px solid #10b981;">
-                <h4 style="color: #10b981;">Optimistisch</h4>
-                <p class="metric-value">€ 788.000</p>
-                <p class="metric-label">Jaaromzet prognose</p>
-                <p style="color: #10b981;">+28% vs. vorig jaar</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown("""
-            <div class="metric-card" style="border-left: 4px solid #14b8a6;">
-                <h4 style="color: #14b8a6;">Basis</h4>
-                <p class="metric-value">€ 713.000</p>
-                <p class="metric-label">Jaaromzet prognose</p>
-                <p style="color: #14b8a6;">+16% vs. vorig jaar</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown("""
-            <div class="metric-card" style="border-left: 4px solid #ef4444;">
-                <h4 style="color: #ef4444;">Pessimistisch</h4>
-                <p class="metric-value">€ 638.000</p>
-                <p class="metric-label">Jaaromzet prognose</p>
-                <p style="color: #64748b;">+4% vs. vorig jaar</p>
-            </div>
-            """, unsafe_allow_html=True)
+        else:  # Eigen Input
+            st.markdown("### ✏️ Eigen Input voor Cashflow Prognose")
+            st.markdown("*Voeg verwachte inkomsten of uitgaven toe die nog niet in het systeem staan.*")
+            
+            # Initialize session state for custom items
+            if "custom_cashflow_items" not in st.session_state:
+                st.session_state.custom_cashflow_items = []
+            
+            # Input form
+            st.markdown("#### ➕ Nieuwe Transactie Toevoegen")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                trans_type = st.selectbox("Type", ["Inkomst", "Uitgave"], key="cf_type")
+                trans_desc = st.text_input("Omschrijving", placeholder="Bv. Nieuwe machine, BTW teruggave...", key="cf_desc")
+                trans_cat = st.selectbox("Categorie", [
+                    "Debiteuren", "CRM Pipeline", "Overig inkomst",
+                    "Investering", "Personeel", "Belastingen", "Inkoop", "Overig uitgave"
+                ], key="cf_cat")
+            
+            with col2:
+                trans_month = st.selectbox("Maand", ["Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"], key="cf_month")
+                trans_amount = st.number_input("Bedrag (€)", min_value=0, value=10000, step=1000, key="cf_amount")
+                if trans_type == "Inkomst":
+                    trans_prob = st.slider("Kans (%)", 0, 100, 80, key="cf_prob")
+                else:
+                    trans_prob = 100
+            
+            if st.button("➕ Toevoegen aan Prognose", key="cf_add"):
+                new_item = {
+                    "type": trans_type,
+                    "beschrijving": trans_desc,
+                    "categorie": trans_cat,
+                    "maand": trans_month,
+                    "bedrag": trans_amount,
+                    "kans": trans_prob
+                }
+                st.session_state.custom_cashflow_items.append(new_item)
+                st.success(f"✅ {trans_type} van {format_currency(trans_amount)} toegevoegd voor {trans_month}")
+            
+            # Show custom items
+            if st.session_state.custom_cashflow_items:
+                st.markdown("---")
+                st.markdown("#### 📋 Jouw Toegevoegde Items")
+                
+                for i, item in enumerate(st.session_state.custom_cashflow_items):
+                    color = "#10b981" if item["type"] == "Inkomst" else "#ef4444"
+                    sign = "+" if item["type"] == "Inkomst" else "-"
+                    st.markdown(f"""
+                    <div class="invoice-row">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>{item['beschrijving']}</strong>
+                                <p style="color: #64748b; margin: 4px 0; font-size: 12px;">{item['categorie']} • {item['maand']} 2025</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-weight: 700; color: {color};">{sign}{format_currency(item['bedrag'])}</span>
+                                {f'<p style="color: #94a3b8; font-size: 12px;">{item["kans"]}% kans</p>' if item["type"] == "Inkomst" else ''}
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🗑️ Alles Wissen", key="cf_clear"):
+                        st.session_state.custom_cashflow_items = []
+                        st.rerun()
+                with col2:
+                    if st.button("🔄 Herbereken Prognose", key="cf_recalc"):
+                        st.info("💡 In de volledige versie wordt de prognose nu herberekend met jouw input.")
+                
+                # Impact summary
+                total_extra_in = sum(i["bedrag"] * i["kans"] / 100 for i in st.session_state.custom_cashflow_items if i["type"] == "Inkomst")
+                total_extra_out = sum(i["bedrag"] for i in st.session_state.custom_cashflow_items if i["type"] == "Uitgave")
+                net_impact = total_extra_in - total_extra_out
+                
+                st.markdown(f"""
+                <div class="agent-card agent-luna">
+                    <strong style="color: #3b82f6;">🔮 LUNA - Impact Analyse</strong>
+                    <p style="margin: 8px 0 0 0;">
+                        Extra inkomsten (gewogen): <strong style="color: #10b981;">{format_currency(total_extra_in)}</strong><br>
+                        Extra uitgaven: <strong style="color: #ef4444;">{format_currency(total_extra_out)}</strong><br>
+                        Netto impact op cashflow: <strong style="color: {'#10b981' if net_impact >= 0 else '#ef4444'};">{format_currency(net_impact)}</strong>
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            else:
+                st.info("💡 Voeg items toe om te zien hoe ze de cashflow prognose beïnvloeden.")
+            
+            # Common scenarios
+            st.markdown("---")
+            st.markdown("#### 🎯 Snelle Scenario's")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button("🚗 Nieuwe Bedrijfswagen", key="cf_car"):
+                    st.session_state.custom_cashflow_items.append({
+                        "type": "Uitgave", "beschrijving": "Nieuwe bedrijfswagen",
+                        "categorie": "Investering", "maand": "Mrt", "bedrag": 45000, "kans": 100
+                    })
+                    st.rerun()
+            with col2:
+                if st.button("🏢 Grote Opdracht Binnen", key="cf_deal"):
+                    st.session_state.custom_cashflow_items.append({
+                        "type": "Inkomst", "beschrijving": "Grote nieuwe opdracht",
+                        "categorie": "CRM Pipeline", "maand": "Apr", "bedrag": 75000, "kans": 70
+                    })
+                    st.rerun()
+            with col3:
+                if st.button("👨‍💼 Nieuwe Medewerker", key="cf_hire"):
+                    for m in ["Apr", "Mei", "Jun"]:
+                        st.session_state.custom_cashflow_items.append({
+                            "type": "Uitgave", "beschrijving": f"Nieuwe medewerker ({m})",
+                            "categorie": "Personeel", "maand": m, "bedrag": 5500, "kans": 100
+                        })
+                    st.rerun()
 
     elif st.session_state.current_view == 'crm':
         st.title("🎯 CRM Pipeline")
