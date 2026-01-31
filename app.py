@@ -17,34 +17,49 @@ st.set_page_config(
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
+
+    /* Base styles with smooth transitions */
+    * { transition: all 0.2s ease-in-out; }
+
     .main { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); }
-    
+
     .stApp { font-family: 'Inter', sans-serif; }
-    
+
+    /* Enhanced metric cards with hover effects */
     .metric-card {
         background: white;
         border-radius: 16px;
         padding: 24px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         border: 1px solid #e2e8f0;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+    }
+
     .metric-value {
         font-size: 32px;
         font-weight: 700;
         color: #0f172a;
+        line-height: 1.2;
     }
-    
+
     .metric-label {
-        font-size: 14px;
+        font-size: 13px;
         color: #64748b;
         margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
     }
-    
-    .metric-delta-positive { color: #10b981; font-size: 14px; }
-    .metric-delta-negative { color: #ef4444; font-size: 14px; }
-    
+
+    .metric-delta-positive { color: #10b981; font-size: 14px; font-weight: 600; }
+    .metric-delta-negative { color: #ef4444; font-size: 14px; font-weight: 600; }
+
+    /* Enhanced agent cards with better visual hierarchy */
     .agent-card {
         background: white;
         border-radius: 12px;
@@ -52,29 +67,41 @@ st.markdown("""
         margin: 8px 0;
         border-left: 4px solid;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    
-    .agent-aria { border-left-color: #14b8a6; }
-    .agent-nova { border-left-color: #8b5cf6; }
-    .agent-sage { border-left-color: #f59e0b; }
-    .agent-luna { border-left-color: #3b82f6; }
-    .agent-alex { border-left-color: #ec4899; }
-    
-    .status-active { 
-        background: #dcfce7; 
-        color: #166534; 
-        padding: 4px 12px; 
-        border-radius: 20px; 
+
+    .agent-card:hover {
+        transform: translateX(4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+
+    .agent-aria { border-left-color: #14b8a6; background: linear-gradient(to right, rgba(20,184,166,0.05), white); }
+    .agent-nova { border-left-color: #8b5cf6; background: linear-gradient(to right, rgba(139,92,246,0.05), white); }
+    .agent-sage { border-left-color: #f59e0b; background: linear-gradient(to right, rgba(245,158,11,0.05), white); }
+    .agent-luna { border-left-color: #3b82f6; background: linear-gradient(to right, rgba(59,130,246,0.05), white); }
+    .agent-alex { border-left-color: #ec4899; background: linear-gradient(to right, rgba(236,72,153,0.05), white); }
+
+    /* Enhanced status badges with icons */
+    .status-active {
+        background: #dcfce7;
+        color: #166534;
+        padding: 6px 14px;
+        border-radius: 20px;
         font-size: 12px;
-        font-weight: 500;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
-    
+
+    .status-active::before { content: "●"; font-size: 8px; }
+
     .status-won { background: #dcfce7; color: #166534; }
     .status-negotiation { background: #fef3c7; color: #92400e; }
     .status-proposal { background: #dbeafe; color: #1e40af; }
     .status-qualified { background: #f3e8ff; color: #6b21a8; }
     .status-lead { background: #f1f5f9; color: #475569; }
-    
+
     .pipeline-stage {
         padding: 8px 16px;
         border-radius: 8px;
@@ -82,54 +109,83 @@ st.markdown("""
         font-weight: 500;
         display: inline-block;
     }
-    
+
+    /* Enhanced invoice rows with better interactivity */
     .invoice-row {
         background: white;
-        border-radius: 8px;
-        padding: 16px;
-        margin: 8px 0;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin: 10px 0;
         border: 1px solid #e2e8f0;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
     }
-    
+
+    .invoice-row::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 3px;
+        background: #14b8a6;
+        transform: scaleY(0);
+        transition: transform 0.2s ease;
+    }
+
     .invoice-row:hover {
         border-color: #14b8a6;
-        box-shadow: 0 4px 12px rgba(20,184,166,0.15);
+        box-shadow: 0 8px 24px rgba(20,184,166,0.12);
+        transform: translateX(4px);
     }
-    
+
+    .invoice-row:hover::before {
+        transform: scaleY(1);
+    }
+
+    /* Enhanced RGS styling */
     .rgs-header {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         color: white;
-        padding: 16px 24px;
+        padding: 18px 24px;
         border-radius: 12px 12px 0 0;
         font-weight: 600;
+        letter-spacing: 0.3px;
     }
-    
+
     .rgs-row {
         display: flex;
         justify-content: space-between;
-        padding: 12px 24px;
+        padding: 14px 24px;
         border-bottom: 1px solid #e2e8f0;
+        background: white;
+        transition: background 0.2s ease;
     }
-    
-    .rgs-row:nth-child(even) { background: #f8fafc; }
-    
+
+    .rgs-row:hover { background: #f8fafc; }
+    .rgs-row:nth-child(even) { background: #fafbfc; }
+    .rgs-row:nth-child(even):hover { background: #f1f5f9; }
+
     .rgs-total {
         background: #0f172a;
         color: white;
         font-weight: 600;
     }
-    
+
+    /* Enhanced Odoo badge */
     .odoo-badge {
         background: linear-gradient(135deg, #714B67 0%, #8F5C7A 100%);
         color: white;
-        padding: 4px 12px;
+        padding: 5px 14px;
         border-radius: 20px;
         font-size: 11px;
         font-weight: 600;
+        display: inline-block;
+        box-shadow: 0 2px 8px rgba(113,75,103,0.3);
     }
-    
+
     .portal-toggle {
         background: white;
         border-radius: 12px;
@@ -137,51 +193,263 @@ st.markdown("""
         margin-bottom: 20px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    
+
+    /* Enhanced client cards */
     .client-card {
         background: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin: 10px 0;
+        border-radius: 14px;
+        padding: 22px;
+        margin: 12px 0;
         border: 1px solid #e2e8f0;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.25s ease;
+        position: relative;
     }
-    
+
     .client-card:hover {
         border-color: #14b8a6;
-        box-shadow: 0 4px 16px rgba(20,184,166,0.15);
-        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(20,184,166,0.12);
+        transform: translateY(-4px);
     }
-    
-    .client-status-green { border-left: 4px solid #10b981; }
-    .client-status-yellow { border-left: 4px solid #f59e0b; }
-    .client-status-red { border-left: 4px solid #ef4444; }
-    
+
+    .client-status-green { border-left: 5px solid #10b981; }
+    .client-status-yellow { border-left: 5px solid #f59e0b; }
+    .client-status-red { border-left: 5px solid #ef4444; }
+
+    /* Pulsing animation for critical status */
+    .client-status-red::after {
+        content: "";
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 10px;
+        height: 10px;
+        background: #ef4444;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* Enhanced team member cards */
     .team-member {
         background: white;
         border-radius: 12px;
-        padding: 16px;
+        padding: 18px;
         margin: 8px 0;
         border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
     }
-    
+
+    .team-member:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    /* Enhanced alert cards with better urgency indicators */
     .alert-card {
-        background: #fef3c7;
+        background: linear-gradient(to right, #fef3c7, #fffbeb);
         border: 1px solid #f59e0b;
+        border-left: 4px solid #f59e0b;
         border-radius: 12px;
-        padding: 16px;
-        margin: 8px 0;
+        padding: 18px 20px;
+        margin: 10px 0;
+        transition: all 0.2s ease;
     }
-    
+
+    .alert-card:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 16px rgba(245,158,11,0.15);
+    }
+
     .alert-card-red {
-        background: #fee2e2;
+        background: linear-gradient(to right, #fee2e2, #fef2f2);
         border: 1px solid #ef4444;
+        border-left: 4px solid #ef4444;
+        animation: alertPulse 3s infinite;
     }
-    
+
+    @keyframes alertPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        50% { box-shadow: 0 0 20px 2px rgba(239, 68, 68, 0.1); }
+    }
+
+    .alert-card-info {
+        background: linear-gradient(to right, #dbeafe, #eff6ff);
+        border: 1px solid #3b82f6;
+        border-left: 4px solid #3b82f6;
+    }
+
     h1, h2, h3 { color: #0f172a; }
-    
+
+    /* Enhanced sidebar */
     .sidebar .sidebar-content { background: #0f172a; }
+
+    /* Navigation button enhancements */
+    .stButton > button {
+        transition: all 0.2s ease !important;
+        font-weight: 500 !important;
+    }
+
+    .stButton > button:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+
+    .stButton > button:active {
+        transform: translateY(0) !important;
+    }
+
+    /* Progress bar enhancements */
+    .stProgress > div > div {
+        background: linear-gradient(90deg, #14b8a6, #0d9488) !important;
+        border-radius: 10px !important;
+    }
+
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background: #f8fafc;
+        padding: 8px;
+        border-radius: 12px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px !important;
+        padding: 10px 20px !important;
+        font-weight: 500 !important;
+    }
+
+    /* Breadcrumb styling */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 0;
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .breadcrumb-item {
+        color: #64748b;
+        text-decoration: none;
+    }
+
+    .breadcrumb-item.active {
+        color: #0f172a;
+        font-weight: 600;
+    }
+
+    .breadcrumb-separator {
+        color: #cbd5e1;
+    }
+
+    /* Empty state styling */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+    }
+
+    .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+
+    .empty-state-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 8px;
+    }
+
+    .empty-state-desc {
+        font-size: 14px;
+    }
+
+    /* Skeleton loading animation */
+    .skeleton {
+        background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* Tooltip styling */
+    [data-tooltip] {
+        position: relative;
+        cursor: help;
+    }
+
+    [data-tooltip]:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1e293b;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+    }
+
+    /* Quick action buttons */
+    .quick-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: #f1f5f9;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+
+    .quick-action:hover {
+        background: white;
+        border-color: #14b8a6;
+        color: #14b8a6;
+    }
+
+    /* Section dividers */
+    .section-divider {
+        height: 1px;
+        background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+        margin: 24px 0;
+    }
+
+    /* KPI trend indicators */
+    .kpi-trend-up { color: #10b981; }
+    .kpi-trend-down { color: #ef4444; }
+    .kpi-trend-neutral { color: #64748b; }
+
+    /* Notification dot */
+    .notification-dot {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 10px;
+        height: 10px;
+        background: #ef4444;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -695,25 +963,111 @@ def get_client_by_id(client_id):
             return client
     return DEMO_CLIENTS[0]  # Default to first client
 
+def render_kpi_card(label, value, delta=None, icon=None, color="#14b8a6", trend=None):
+    """Render an enhanced KPI card with icon and trend indicator"""
+    delta_html = ""
+    if delta:
+        trend_color = "#10b981" if trend == "up" else "#ef4444" if trend == "down" else "#64748b"
+        trend_icon = "↑" if trend == "up" else "↓" if trend == "down" else "→"
+        delta_html = f'<p style="color: {trend_color}; font-size: 13px; margin: 8px 0 0 0; font-weight: 600;">{trend_icon} {delta}</p>'
+
+    icon_html = f'<span style="font-size: 24px; margin-bottom: 8px; display: block;">{icon}</span>' if icon else ""
+
+    st.markdown(f"""
+    <div class="metric-card" style="border-top: 3px solid {color};">
+        {icon_html}
+        <p class="metric-label">{label}</p>
+        <p class="metric-value">{value}</p>
+        {delta_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+def render_section_header(title, subtitle=None):
+    """Render a consistent section header"""
+    subtitle_html = f'<p style="color: #64748b; font-size: 14px; margin: 4px 0 0 0;">{subtitle}</p>' if subtitle else ""
+    st.markdown(f"""
+    <div style="margin-bottom: 20px;">
+        <h3 style="color: #0f172a; margin: 0; font-weight: 600;">{title}</h3>
+        {subtitle_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+def render_empty_state(icon, title, description, action_label=None, action_key=None):
+    """Render an empty state placeholder"""
+    st.markdown(f"""
+    <div class="empty-state">
+        <div class="empty-state-icon">{icon}</div>
+        <p class="empty-state-title">{title}</p>
+        <p class="empty-state-desc">{description}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    if action_label and action_key:
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            return st.button(action_label, key=action_key, use_container_width=True)
+    return False
+
+def render_breadcrumb(items):
+    """Render navigation breadcrumbs"""
+    breadcrumb_html = '<div class="breadcrumb">'
+    for i, item in enumerate(items):
+        if i > 0:
+            breadcrumb_html += '<span class="breadcrumb-separator">›</span>'
+        if i == len(items) - 1:
+            breadcrumb_html += f'<span class="breadcrumb-item active">{item}</span>'
+        else:
+            breadcrumb_html += f'<span class="breadcrumb-item">{item}</span>'
+    breadcrumb_html += '</div>'
+    st.markdown(breadcrumb_html, unsafe_allow_html=True)
+
 # ============================================
 # SIDEBAR NAVIGATION
 # ============================================
 
+# Helper function for nav buttons with active state
+def nav_button(label, view, key_prefix, current_view):
+    """Create a navigation button with active state indicator"""
+    is_active = current_view == view
+    if is_active:
+        st.markdown(f"""
+        <div style="background: linear-gradient(90deg, #14b8a6, #0d9488); color: white; padding: 10px 16px;
+             border-radius: 8px; margin: 4px 0; font-weight: 600; display: flex; align-items: center; gap: 8px;
+             box-shadow: 0 4px 12px rgba(20,184,166,0.3);">
+            <span style="width: 6px; height: 6px; background: white; border-radius: 50%;"></span>
+            {label}
+        </div>
+        """, unsafe_allow_html=True)
+        return False
+    else:
+        return st.button(label, key=f"{key_prefix}_{view}", use_container_width=True)
+
 with st.sidebar:
+    # Enhanced logo with animation
     st.markdown("""
-    <div style="text-align: center; padding: 20px 0;">
-        <h1 style="color: #14b8a6; font-size: 32px; margin: 0;">NOVA</h1>
-        <p style="color: #64748b; font-size: 12px; margin: 5px 0 0 0;">Platform Demo</p>
+    <div style="text-align: center; padding: 24px 0;">
+        <div style="display: inline-block; position: relative;">
+            <h1 style="color: #14b8a6; font-size: 36px; margin: 0; font-weight: 700;
+                       background: linear-gradient(135deg, #14b8a6, #0d9488);
+                       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+                       text-shadow: none;">NOVA</h1>
+            <div style="position: absolute; top: -4px; right: -12px; width: 8px; height: 8px;
+                        background: #10b981; border-radius: 50%; animation: pulse 2s infinite;"></div>
+        </div>
+        <p style="color: #64748b; font-size: 12px; margin: 8px 0 0 0; letter-spacing: 1px;">PLATFORM DEMO</p>
     </div>
     """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Portal Toggle
-    st.markdown("**PORTAL**")
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+    # Portal Toggle with enhanced styling
+    st.markdown("""
+    <p style="color: #94a3b8; font-size: 11px; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px;">
+        PORTAL
+    </p>
+    """, unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🏢 Kantoor", key="portal_kantoor", use_container_width=True, 
+        if st.button("🏢 Kantoor", key="portal_kantoor", use_container_width=True,
                      type="primary" if st.session_state.portal_mode == 'kantoor' else "secondary"):
             st.session_state.portal_mode = 'kantoor'
             st.session_state.current_view = 'dashboard'
@@ -725,14 +1079,18 @@ with st.sidebar:
             st.session_state.portal_mode = 'klant'
             st.session_state.current_view = 'dashboard'
             st.rerun()
-    
-    st.markdown("---")
-    
+
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
     # Different navigation based on portal mode
     if st.session_state.portal_mode == 'kantoor':
         # KANTOOR PORTAL NAVIGATION
-        st.markdown("**MISSION CONTROL**")
-        
+        st.markdown("""
+        <p style="color: #94a3b8; font-size: 11px; font-weight: 600; letter-spacing: 1px; margin-bottom: 12px;">
+            MISSION CONTROL
+        </p>
+        """, unsafe_allow_html=True)
+
         kantoor_nav = {
             "🎯 Overzicht": "dashboard",
             "👥 Klantenportfolio": "clients",
@@ -740,14 +1098,19 @@ with st.sidebar:
             "🚨 Alerts & Acties": "alerts",
             "🤖 AI Agents Overzicht": "agents",
         }
-        
+
         for label, view in kantoor_nav.items():
-            if st.button(label, key=f"knav_{view}", use_container_width=True):
+            if nav_button(label, view, "knav", st.session_state.current_view):
                 st.session_state.current_view = view
-        
-        # Quick client lookup
-        st.markdown("---")
-        st.markdown("**KLANT ZOEKEN**")
+                st.rerun()
+
+        # Quick client lookup with enhanced styling
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <p style="color: #94a3b8; font-size: 11px; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px;">
+            🔍 KLANT ZOEKEN
+        </p>
+        """, unsafe_allow_html=True)
         client_names = [c['name'] for c in DEMO_CLIENTS]
         selected = st.selectbox("Selecteer klant", [""] + client_names, key="client_lookup", label_visibility="collapsed")
         if selected:
@@ -758,35 +1121,47 @@ with st.sidebar:
                         st.session_state.portal_mode = 'klant'
                         st.session_state.current_view = 'dashboard'
                         st.rerun()
-    
+
     else:
         # KLANT PORTAL NAVIGATION
-        # Show selected client info
+        # Show selected client info with enhanced card
         if st.session_state.selected_client:
             client = get_client_by_id(st.session_state.selected_client)
         else:
             client = DEMO_CLIENTS[0]
             st.session_state.selected_client = client['id']
-        
+
+        status_color = {"green": "#10b981", "yellow": "#f59e0b", "red": "#ef4444"}.get(client.get('status', 'green'), "#10b981")
         st.markdown(f"""
-        <div style="background: #f1f5f9; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
-            <p style="color: #64748b; font-size: 11px; margin: 0;">KLANT</p>
-            <p style="color: #0f172a; font-weight: 600; margin: 4px 0;">{client['name']}</p>
-            <p style="color: #64748b; font-size: 12px; margin: 0;">{client['contact']}</p>
+        <div style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); padding: 18px; border-radius: 14px;
+                    margin-bottom: 20px; border-left: 4px solid {status_color};
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <p style="color: #94a3b8; font-size: 10px; margin: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                ACTIEVE KLANT
+            </p>
+            <p style="color: #0f172a; font-weight: 700; margin: 6px 0 4px 0; font-size: 15px;">{client['name']}</p>
+            <p style="color: #64748b; font-size: 12px; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span style="width: 6px; height: 6px; background: {status_color}; border-radius: 50%;"></span>
+                {client['contact']}
+            </p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         # Back to kantoor button
         if st.button("← Terug naar Kantoor", key="back_to_kantoor", use_container_width=True):
             st.session_state.portal_mode = 'kantoor'
             st.session_state.current_view = 'dashboard'
             st.rerun()
-        
-        st.markdown("---")
-        
-        # Client navigation
-        st.markdown("**NAVIGATIE**")
-        
+
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+        # Client navigation with section header
+        st.markdown("""
+        <p style="color: #94a3b8; font-size: 11px; font-weight: 600; letter-spacing: 1px; margin-bottom: 12px;">
+            NAVIGATIE
+        </p>
+        """, unsafe_allow_html=True)
+
         nav_options = {
             "🎯 Dashboard": "dashboard",
             "📄 Facturen": "invoices",
@@ -797,39 +1172,46 @@ with st.sidebar:
             "💬 Chat met ALEX": "chat",
             "📈 Cashflow & Forecasting": "forecast"
         }
-        
+
         for label, view in nav_options.items():
-            if st.button(label, key=f"cnav_{view}", use_container_width=True):
+            if nav_button(label, view, "cnav", st.session_state.current_view):
                 st.session_state.current_view = view
-        
-        # Odoo section
-        st.markdown("---")
+                st.rerun()
+
+        # Odoo section with enhanced badge
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
         st.markdown("""<span class="odoo-badge">ODOO INTEGRATIE</span>""", unsafe_allow_html=True)
         st.markdown("")
-        
+
         odoo_options = {
             "📚 Boekhouding": "odoo_accounting",
             "🎯 CRM Pipeline": "crm",
             "📦 Inkoop (PO's)": "purchase",
             "👥 HR & Personeel": "hr",
         }
-        
+
         for label, view in odoo_options.items():
-            if st.button(label, key=f"onav_{view}", use_container_width=True):
+            if nav_button(label, view, "onav", st.session_state.current_view):
                 st.session_state.current_view = view
-        
+                st.rerun()
+
         # Fiscaal section
-        st.markdown("---")
-        st.markdown("**📋 FISCAAL**")
-        
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <p style="color: #94a3b8; font-size: 11px; font-weight: 600; letter-spacing: 1px; margin-bottom: 12px;">
+            📋 FISCAAL
+        </p>
+        """, unsafe_allow_html=True)
+
         fiscaal_options = {
             "🧾 BTW & ICP": "btw",
             "🏛️ Vennootschapsbelasting": "vpb",
         }
-        
+
         for label, view in fiscaal_options.items():
-            if st.button(label, key=f"fnav_{view}", use_container_width=True):
+            if nav_button(label, view, "fnav", st.session_state.current_view):
                 st.session_state.current_view = view
+                st.rerun()
 
 # ============================================
 # MAIN CONTENT - KANTOOR PORTAL
@@ -839,103 +1221,203 @@ if st.session_state.portal_mode == 'kantoor':
     
     if st.session_state.current_view == 'dashboard':
         # KANTOOR DASHBOARD - MISSION CONTROL
-        st.title("🏢 Mission Control")
-        st.markdown(f"**{FIRM_INFO['name']}** | {datetime.now().strftime('%d %B %Y')}")
-        
-        # Firm-wide KPIs
-        st.markdown("### 📊 Kantoor KPI's")
+        st.markdown("""
+        <div style="margin-bottom: 24px;">
+            <h1 style="color: #0f172a; margin: 0; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 32px;">🏢</span> Mission Control
+            </h1>
+            <p style="color: #64748b; font-size: 15px; margin: 8px 0 0 0;">
+                <strong>{}</strong> &nbsp;•&nbsp; {}
+            </p>
+        </div>
+        """.format(FIRM_INFO['name'], datetime.now().strftime('%d %B %Y')), unsafe_allow_html=True)
+
+        # Firm-wide KPIs with enhanced cards
+        render_section_header("📊 Kantoor KPI's", "Real-time overzicht van uw kantoorprestaties")
         col1, col2, col3, col4, col5 = st.columns(5)
-        
+
         with col1:
-            st.metric("Actieve Klanten", "45", "+3 dit kwartaal")
+            render_kpi_card("Actieve Klanten", "45", "+3 dit kwartaal", "👥", "#3b82f6", "up")
         with col2:
             total_omzet = sum(c['omzet_ytd'] for c in DEMO_CLIENTS)
-            st.metric("Totale Omzet Portfolio", format_currency(total_omzet), "+8.2%")
+            render_kpi_card("Totale Omzet Portfolio", format_currency(total_omzet), "+8.2% vs vorig jaar", "💰", "#10b981", "up")
         with col3:
-            st.metric("Openstaande Facturen", format_currency(sum(c['openstaand'] for c in DEMO_CLIENTS)), "")
+            render_kpi_card("Openstaande Facturen", format_currency(sum(c['openstaand'] for c in DEMO_CLIENTS)), None, "📄", "#f59e0b")
         with col4:
-            st.metric("Declarabiliteit", "78%", "+5%")
+            render_kpi_card("Declarabiliteit", "78%", "+5% vs vorige maand", "⏱️", "#8b5cf6", "up")
         with col5:
-            st.metric("AI Verwerkingen Vandaag", "246", "")
+            render_kpi_card("AI Verwerkingen", "246", "Vandaag verwerkt", "🤖", "#14b8a6")
         
         st.markdown("---")
         
         # Two columns: Alerts and Quick Overview
         col_left, col_right = st.columns([1, 1])
-        
+
         with col_left:
-            st.markdown("### 🚨 Actieve Alerts")
+            render_section_header("🚨 Actieve Alerts", f"{len(FIRM_ALERTS)} actieve meldingen")
             for alert in FIRM_ALERTS[:4]:
-                alert_class = "alert-card-red" if alert['type'] == 'urgent' else "alert-card"
-                icon = "🔴" if alert['type'] == 'urgent' else "🟡" if alert['type'] == 'warning' else "🔵"
+                if alert['type'] == 'urgent':
+                    alert_class = "alert-card-red"
+                    icon = "🔴"
+                    priority_badge = '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-left: 8px;">URGENT</span>'
+                elif alert['type'] == 'warning':
+                    alert_class = "alert-card"
+                    icon = "⚠️"
+                    priority_badge = '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-left: 8px;">ATTENTIE</span>'
+                else:
+                    alert_class = "alert-card-info"
+                    icon = "ℹ️"
+                    priority_badge = '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-left: 8px;">INFO</span>'
+
                 st.markdown(f"""
                 <div class="{alert_class}">
-                    <strong>{icon} {alert['client']}</strong><br>
-                    <span style="color: #64748b;">{alert['message']}</span><br>
-                    <small style="color: #94a3b8;">{alert['time']}</small>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <strong style="display: flex; align-items: center; gap: 6px;">
+                                {icon} {alert['client']} {priority_badge}
+                            </strong>
+                            <p style="color: #475569; margin: 8px 0 4px 0; font-size: 14px;">{alert['message']}</p>
+                            <small style="color: #94a3b8; display: flex; align-items: center; gap: 4px;">
+                                <span>🕐</span> {alert['time']}
+                            </small>
+                        </div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
         
         with col_right:
-            st.markdown("### 📈 Portfolio Gezondheid")
+            render_section_header("📈 Portfolio Gezondheid", "Klantstatus verdeling")
             # Status distribution
             green = len([c for c in DEMO_CLIENTS if c['status'] == 'green'])
             yellow = len([c for c in DEMO_CLIENTS if c['status'] == 'yellow'])
             red = len([c for c in DEMO_CLIENTS if c['status'] == 'red'])
-            
+            total = green + yellow + red
+
             fig = go.Figure(data=[go.Pie(
                 labels=['Gezond', 'Aandacht nodig', 'Kritiek'],
                 values=[green, yellow, red],
-                hole=0.6,
-                marker_colors=['#10b981', '#f59e0b', '#ef4444']
+                hole=0.65,
+                marker_colors=['#10b981', '#f59e0b', '#ef4444'],
+                textinfo='percent+value',
+                textposition='outside',
+                textfont=dict(size=12, color='#475569'),
+                hovertemplate='<b>%{label}</b><br>%{value} klanten<br>%{percent}<extra></extra>',
+                pull=[0, 0, 0.05]  # Slightly pull out critical segment
             )])
             fig.update_layout(
                 showlegend=True,
-                legend=dict(orientation="h", yanchor="bottom", y=-0.1),
-                margin=dict(t=20, b=20, l=20, r=20),
-                height=250
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.15,
+                    xanchor="center",
+                    x=0.5,
+                    font=dict(size=12, color='#475569')
+                ),
+                margin=dict(t=30, b=30, l=20, r=20),
+                height=280,
+                annotations=[dict(
+                    text=f'<b>{total}</b><br><span style="font-size:12px">klanten</span>',
+                    x=0.5, y=0.5,
+                    font=dict(size=24, color='#0f172a'),
+                    showarrow=False
+                )]
             )
             st.plotly_chart(fig, use_container_width=True)
+
+            # Quick stats below chart
+            st.markdown(f"""
+            <div style="display: flex; justify-content: space-around; padding: 12px; background: #f8fafc; border-radius: 8px; margin-top: -10px;">
+                <div style="text-align: center;">
+                    <span style="color: #10b981; font-weight: 700; font-size: 18px;">{green}</span>
+                    <p style="color: #64748b; font-size: 11px; margin: 0;">Gezond</p>
+                </div>
+                <div style="text-align: center;">
+                    <span style="color: #f59e0b; font-weight: 700; font-size: 18px;">{yellow}</span>
+                    <p style="color: #64748b; font-size: 11px; margin: 0;">Attentie</p>
+                </div>
+                <div style="text-align: center;">
+                    <span style="color: #ef4444; font-weight: 700; font-size: 18px;">{red}</span>
+                    <p style="color: #64748b; font-size: 11px; margin: 0;">Kritiek</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        st.markdown("---")
-        
-        # Client Overview Table
-        st.markdown("### 👥 Klanten Overzicht (Top 8)")
-        
-        for client in DEMO_CLIENTS:
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+        # Client Overview Table with enhanced styling
+        render_section_header("👥 Klanten Overzicht", f"{len(DEMO_CLIENTS)} actieve klanten in uw portfolio")
+
+        # Table header
+        st.markdown("""
+        <div style="display: grid; grid-template-columns: 3fr 2fr 2fr 2fr 2fr 1fr; gap: 16px; padding: 12px 16px;
+                    background: #f8fafc; border-radius: 10px 10px 0 0; margin-bottom: 4px;">
+            <span style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Klant</span>
+            <span style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Omzet YTD</span>
+            <span style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Resultaat</span>
+            <span style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Openstaand</span>
+            <span style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Verantw.</span>
+            <span style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"></span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        for i, client in enumerate(DEMO_CLIENTS):
             status_color = {"green": "#10b981", "yellow": "#f59e0b", "red": "#ef4444"}[client['status']]
             growth = ((client['omzet_ytd'] / client['omzet_prev']) - 1) * 100 if client['omzet_prev'] > 0 else 0
             growth_str = f"+{growth:.1f}%" if growth >= 0 else f"{growth:.1f}%"
             growth_color = "#10b981" if growth >= 0 else "#ef4444"
-            
+            growth_icon = "↑" if growth >= 0 else "↓"
+            result_color = "#10b981" if client['winst_ytd'] >= 0 else "#ef4444"
+            alert_indicator = f'<span style="color: #f59e0b; margin-left: 6px;" title="{len(client["alerts"])} alert(s)">⚠️</span>' if client['alerts'] else ""
+            row_bg = "#ffffff" if i % 2 == 0 else "#fafbfc"
+
             col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 1])
-            
+
             with col1:
                 st.markdown(f"""
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 12px; height: 12px; border-radius: 50%; background: {status_color};"></div>
+                <div style="display: flex; align-items: center; gap: 12px; background: {row_bg}; padding: 8px 0;">
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: {status_color};
+                                box-shadow: 0 0 0 3px {status_color}22;"></div>
                     <div>
-                        <strong>{client['name']}</strong><br>
-                        <small style="color: #64748b;">{client['sector']}</small>
+                        <strong style="color: #0f172a;">{client['name']}</strong>{alert_indicator}<br>
+                        <small style="color: #64748b; font-size: 12px;">{client['sector']}</small>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
             with col2:
-                st.markdown(f"**{format_currency(client['omzet_ytd'])}**<br><small style='color: {growth_color};'>{growth_str}</small>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background: {row_bg}; padding: 8px 0;">
+                    <strong style="color: #0f172a;">{format_currency(client['omzet_ytd'])}</strong><br>
+                    <small style='color: {growth_color}; font-weight: 600;'>{growth_icon} {growth_str}</small>
+                </div>
+                """, unsafe_allow_html=True)
             with col3:
-                st.markdown(f"**{format_currency(client['winst_ytd'])}**<br><small style='color: #64748b;'>Resultaat</small>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background: {row_bg}; padding: 8px 0;">
+                    <strong style="color: {result_color};">{format_currency(client['winst_ytd'])}</strong><br>
+                    <small style='color: #94a3b8;'>Resultaat</small>
+                </div>
+                """, unsafe_allow_html=True)
             with col4:
-                st.markdown(f"**{format_currency(client['openstaand'])}**<br><small style='color: #64748b;'>Openstaand</small>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background: {row_bg}; padding: 8px 0;">
+                    <strong style="color: #0f172a;">{format_currency(client['openstaand'])}</strong><br>
+                    <small style='color: #94a3b8;'>Openstaand</small>
+                </div>
+                """, unsafe_allow_html=True)
             with col5:
-                st.markdown(f"**{client['accountant']}**<br><small style='color: #64748b;'>{client['last_activity']}</small>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background: {row_bg}; padding: 8px 0;">
+                    <strong style="color: #0f172a;">{client['accountant'].split()[0]}</strong><br>
+                    <small style='color: #94a3b8;'>{client['last_activity']}</small>
+                </div>
+                """, unsafe_allow_html=True)
             with col6:
-                if st.button("→", key=f"goto_{client['id']}", help=f"Naar {client['name']}"):
+                if st.button("→", key=f"goto_{client['id']}", help=f"Bekijk {client['name']}"):
                     st.session_state.selected_client = client['id']
                     st.session_state.portal_mode = 'klant'
                     st.session_state.current_view = 'dashboard'
                     st.rerun()
-            
-            st.markdown("<hr style='margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
     
     elif st.session_state.current_view == 'clients':
         # KLANTENPORTFOLIO
@@ -1143,97 +1625,163 @@ else:  # portal_mode == 'klant'
         st.session_state.selected_client = current_client['id']
     
     if st.session_state.current_view == 'dashboard':
-        st.title("🎯 Mijn Financiële Cockpit")
-        st.markdown(f"Welkom terug, **{current_client['contact']}** | {datetime.now().strftime('%d %B %Y')}")
-        
-        # KPI Cards
+        # Breadcrumb navigation
+        render_breadcrumb([current_client['name'], "Dashboard"])
+
+        # Enhanced page header
+        st.markdown(f"""
+        <div style="margin-bottom: 28px;">
+            <h1 style="color: #0f172a; margin: 0; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 32px;">🎯</span> Mijn Financiële Cockpit
+            </h1>
+            <p style="color: #64748b; font-size: 15px; margin: 8px 0 0 0;">
+                Welkom terug, <strong>{current_client['contact']}</strong> &nbsp;•&nbsp; {datetime.now().strftime('%d %B %Y')}
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # KPI Cards with enhanced styling
+        yoy_growth = ((current_client['omzet_ytd']/current_client['omzet_prev'])-1)*100 if current_client['omzet_prev'] > 0 else 0
+        marge = (current_client['winst_ytd'] / current_client['omzet_ytd'] * 100) if current_client['omzet_ytd'] > 0 else 0
+
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
-            st.metric(
-                label="Omzet YTD",
-                value=format_currency(current_client['omzet_ytd']),
-                delta=f"+{((current_client['omzet_ytd']/current_client['omzet_prev'])-1)*100:.1f}% vs vorig jaar"
+            render_kpi_card(
+                "Omzet YTD",
+                format_currency(current_client['omzet_ytd']),
+                f"+{yoy_growth:.1f}% vs vorig jaar",
+                "💰", "#10b981", "up" if yoy_growth >= 0 else "down"
             )
-        
+
         with col2:
-            marge = (current_client['winst_ytd'] / current_client['omzet_ytd'] * 100) if current_client['omzet_ytd'] > 0 else 0
-            st.metric(
-                label="Winstmarge",
-                value=f"{marge:.1f}%",
-                delta="+2.1pp"
+            render_kpi_card(
+                "Winstmarge",
+                f"{marge:.1f}%",
+                "+2.1pp vs vorig kwartaal",
+                "📊", "#8b5cf6", "up"
             )
-        
+
         with col3:
-            st.metric(
-                label="Openstaande facturen",
-                value=format_currency(current_client['openstaand']),
-                delta="-€23.500 deze week"
+            render_kpi_card(
+                "Openstaande Facturen",
+                format_currency(current_client['openstaand']),
+                "-€23.500 deze week",
+                "📄", "#f59e0b", "down"
             )
-        
+
         with col4:
-            st.metric(
-                label="Cashflow prognose (30d)",
-                value="€ 89.200",
-                delta="Positief"
+            render_kpi_card(
+                "Cashflow (30d)",
+                "€ 89.200",
+                "Gezonde positie",
+                "💵", "#14b8a6", "up"
             )
-        
-        # Charts row
-        st.markdown("---")
+
+        # Charts row with improved styling
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            st.markdown("### 📈 Omzet Verloop")
+            render_section_header("📈 Omzet Verloop", "Maandelijkse omzetontwikkeling")
             months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
             omzet_data = [45000, 52000, 48000, 61000, 55000, 58000, 62000, 59000, 67000, 71000, 68000, 66000]
-            
+
             fig = px.line(x=months, y=omzet_data, markers=True)
-            fig.update_traces(line_color='#14b8a6', line_width=3)
+            fig.update_traces(
+                line_color='#14b8a6',
+                line_width=3,
+                marker=dict(size=8, color='#14b8a6', line=dict(width=2, color='white')),
+                fill='tozeroy',
+                fillcolor='rgba(20, 184, 166, 0.1)',
+                hovertemplate='<b>%{x}</b><br>Omzet: €%{y:,.0f}<extra></extra>'
+            )
             fig.update_layout(
                 xaxis_title="", yaxis_title="",
-                margin=dict(t=20, b=20),
-                height=250
+                margin=dict(t=20, b=20, l=10, r=10),
+                height=260,
+                yaxis=dict(gridcolor='#f1f5f9', tickformat='€,.0f'),
+                xaxis=dict(gridcolor='#f1f5f9'),
+                plot_bgcolor='white',
+                hovermode='x unified'
             )
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            st.markdown("### 💰 Kosten Verdeling")
+            render_section_header("💰 Kosten Verdeling", "Breakdown per categorie")
             kosten_data = {
                 'Categorie': ['Personeel', 'Materialen', 'Huisvesting', 'Overig'],
                 'Bedrag': [240000, 185000, 44500, 53300]
             }
-            fig = px.pie(kosten_data, values='Bedrag', names='Categorie', hole=0.5)
-            fig.update_traces(marker_colors=['#14b8a6', '#8b5cf6', '#f59e0b', '#64748b'])
-            fig.update_layout(margin=dict(t=20, b=20), height=250)
+            total_kosten = sum(kosten_data['Bedrag'])
+            fig = px.pie(kosten_data, values='Bedrag', names='Categorie', hole=0.6)
+            fig.update_traces(
+                marker_colors=['#14b8a6', '#8b5cf6', '#f59e0b', '#94a3b8'],
+                textinfo='percent',
+                textposition='outside',
+                textfont=dict(size=12),
+                hovertemplate='<b>%{label}</b><br>€%{value:,.0f}<br>%{percent}<extra></extra>'
+            )
+            fig.update_layout(
+                margin=dict(t=20, b=20, l=10, r=10),
+                height=260,
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5),
+                annotations=[dict(
+                    text=f'<b>€{total_kosten/1000:.0f}K</b><br><span style="font-size:10px">totaal</span>',
+                    x=0.5, y=0.5, font=dict(size=16, color='#0f172a'), showarrow=False
+                )]
+            )
             st.plotly_chart(fig, use_container_width=True)
-        
-        # AI Insights
-        st.markdown("---")
-        st.markdown("### 🤖 AI Inzichten")
-        
+
+        # AI Insights with enhanced styling
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        render_section_header("🤖 AI Inzichten", "Gepersonaliseerde aanbevelingen van uw AI-team")
+
         col1, col2, col3 = st.columns(3)
-        
+
         with col1:
             st.markdown("""
-            <div class="agent-card agent-sage">
-                <strong style="color: #f59e0b;">💡 SAGE - Fiscaal Tip</strong>
-                <p style="margin: 8px 0 0 0;">Overweeg de energie-investeringsaftrek (EIA) voor uw nieuwe machines. Potentiële besparing: €12.500</p>
+            <div class="agent-card agent-sage" style="min-height: 140px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 24px;">💡</span>
+                    <div>
+                        <strong style="color: #f59e0b;">SAGE</strong>
+                        <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 6px;">Fiscaal</span>
+                    </div>
+                </div>
+                <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.5;">Overweeg de energie-investeringsaftrek (EIA) voor uw nieuwe machines.</p>
+                <p style="margin: 8px 0 0 0; color: #10b981; font-weight: 600; font-size: 14px;">Potentiële besparing: €12.500</p>
             </div>
             """, unsafe_allow_html=True)
-        
+
         with col2:
             st.markdown("""
-            <div class="agent-card agent-luna">
-                <strong style="color: #3b82f6;">📊 LUNA - Prognose</strong>
-                <p style="margin: 8px 0 0 0;">Op basis van huidige trend: Q1 omzet verwacht €185.000 (+8% YoY)</p>
+            <div class="agent-card agent-luna" style="min-height: 140px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 24px;">📊</span>
+                    <div>
+                        <strong style="color: #3b82f6;">LUNA</strong>
+                        <span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 6px;">Forecast</span>
+                    </div>
+                </div>
+                <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.5;">Op basis van huidige trend: Q1 omzet verwacht</p>
+                <p style="margin: 8px 0 0 0; color: #0f172a; font-weight: 700; font-size: 18px;">€185.000 <span style="color: #10b981; font-size: 14px;">↑ +8% YoY</span></p>
             </div>
             """, unsafe_allow_html=True)
-        
+
         with col3:
             st.markdown("""
-            <div class="agent-card agent-aria">
-                <strong style="color: #14b8a6;">📄 ARIA - Facturen</strong>
-                <p style="margin: 8px 0 0 0;">4 nieuwe facturen verwerkt. 1 wacht op uw goedkeuring.</p>
+            <div class="agent-card agent-aria" style="min-height: 140px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 24px;">📄</span>
+                    <div>
+                        <strong style="color: #14b8a6;">ARIA</strong>
+                        <span style="background: #ccfbf1; color: #0d9488; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 6px;">Facturen</span>
+                    </div>
+                </div>
+                <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.5;">4 nieuwe facturen automatisch verwerkt</p>
+                <p style="margin: 8px 0 0 0; color: #f59e0b; font-weight: 600; font-size: 14px;">⚠️ 1 wacht op uw goedkeuring</p>
             </div>
             """, unsafe_allow_html=True)
 
