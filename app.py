@@ -130,6 +130,55 @@ st.markdown("""
         font-weight: 600;
     }
     
+    .portal-toggle {
+        background: white;
+        border-radius: 12px;
+        padding: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .client-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 10px 0;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .client-card:hover {
+        border-color: #14b8a6;
+        box-shadow: 0 4px 16px rgba(20,184,166,0.15);
+        transform: translateY(-2px);
+    }
+    
+    .client-status-green { border-left: 4px solid #10b981; }
+    .client-status-yellow { border-left: 4px solid #f59e0b; }
+    .client-status-red { border-left: 4px solid #ef4444; }
+    
+    .team-member {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 8px 0;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .alert-card {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 8px 0;
+    }
+    
+    .alert-card-red {
+        background: #fee2e2;
+        border: 1px solid #ef4444;
+    }
+    
     h1, h2, h3 { color: #0f172a; }
     
     .sidebar .sidebar-content { background: #0f172a; }
@@ -137,8 +186,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Initialize session state
+if 'portal_mode' not in st.session_state:
+    st.session_state.portal_mode = 'kantoor'  # 'kantoor' or 'klant'
 if 'current_view' not in st.session_state:
     st.session_state.current_view = 'dashboard'
+if 'selected_client' not in st.session_state:
+    st.session_state.selected_client = None
 if 'selected_invoice' not in st.session_state:
     st.session_state.selected_invoice = None
 if 'processed_invoices' not in st.session_state:
@@ -148,13 +201,163 @@ if 'chat_history' not in st.session_state:
 if 'selected_deal' not in st.session_state:
     st.session_state.selected_deal = None
 
-# Demo Data
-DEMO_CLIENT = {
-    "name": "Vermeer Bouw B.V.",
-    "contact": "Jan Vermeer",
-    "kvk": "12345678",
-    "btw": "NL123456789B01"
+# ============================================
+# DEMO DATA - KANTOOR (FIRM) LEVEL
+# ============================================
+
+FIRM_INFO = {
+    "name": "Van der Berg & Partners Accountants",
+    "location": "Amsterdam",
+    "employees": 12,
+    "clients": 45
 }
+
+TEAM_MEMBERS = [
+    {"name": "Lisa van der Berg", "role": "Managing Partner", "clients": 8, "workload": 85, "avatar": "👩‍💼"},
+    {"name": "Mark de Vries", "role": "Senior Accountant", "clients": 12, "workload": 92, "avatar": "👨‍💼"},
+    {"name": "Sophie Jansen", "role": "Accountant", "clients": 10, "workload": 78, "avatar": "👩‍💻"},
+    {"name": "Thomas Bakker", "role": "Junior Accountant", "clients": 8, "workload": 65, "avatar": "👨‍💻"},
+    {"name": "Emma de Groot", "role": "Fiscalist", "clients": 7, "workload": 88, "avatar": "👩‍⚖️"},
+]
+
+# Demo clients for the firm
+DEMO_CLIENTS = [
+    {
+        "id": "CL001",
+        "name": "Vermeer Bouw B.V.",
+        "contact": "Jan Vermeer",
+        "kvk": "12345678",
+        "btw": "NL123456789B01",
+        "sector": "Bouw & Constructie",
+        "omzet_ytd": 612500,
+        "omzet_prev": 545200,
+        "winst_ytd": 89400,
+        "openstaand": 142000,
+        "status": "green",
+        "accountant": "Mark de Vries",
+        "alerts": [],
+        "last_activity": "2 uur geleden"
+    },
+    {
+        "id": "CL002",
+        "name": "TechStart B.V.",
+        "contact": "Jessica de Vries",
+        "kvk": "23456789",
+        "btw": "NL234567890B01",
+        "sector": "IT & Software",
+        "omzet_ytd": 890000,
+        "omzet_prev": 720000,
+        "winst_ytd": 156000,
+        "openstaand": 45000,
+        "status": "green",
+        "accountant": "Sophie Jansen",
+        "alerts": [],
+        "last_activity": "1 dag geleden"
+    },
+    {
+        "id": "CL003",
+        "name": "Restaurant De Gouden Lepel",
+        "contact": "Ahmed El-Amrani",
+        "kvk": "34567890",
+        "btw": "NL345678901B01",
+        "sector": "Horeca",
+        "omzet_ytd": 425000,
+        "omzet_prev": 480000,
+        "winst_ytd": 28500,
+        "openstaand": 67500,
+        "status": "yellow",
+        "accountant": "Lisa van der Berg",
+        "alerts": ["BTW deadline nadert", "Margedruk door stijgende kosten"],
+        "last_activity": "3 uur geleden"
+    },
+    {
+        "id": "CL004",
+        "name": "Logistics Plus B.V.",
+        "contact": "Robert Smit",
+        "kvk": "45678901",
+        "btw": "NL456789012B01",
+        "sector": "Transport & Logistiek",
+        "omzet_ytd": 1250000,
+        "omzet_prev": 1180000,
+        "winst_ytd": 125000,
+        "openstaand": 312000,
+        "status": "yellow",
+        "accountant": "Mark de Vries",
+        "alerts": ["Hoge debiteurenstand"],
+        "last_activity": "5 uur geleden"
+    },
+    {
+        "id": "CL005",
+        "name": "Retail Mode B.V.",
+        "contact": "Nina Petrova",
+        "kvk": "56789012",
+        "btw": "NL567890123B01",
+        "sector": "Retail",
+        "omzet_ytd": 320000,
+        "omzet_prev": 450000,
+        "winst_ytd": -45000,
+        "openstaand": 89000,
+        "status": "red",
+        "accountant": "Emma de Groot",
+        "alerts": ["Negatief resultaat", "Liquiditeitsprobleem dreigt", "Urgent gesprek nodig"],
+        "last_activity": "30 min geleden"
+    },
+    {
+        "id": "CL006",
+        "name": "Gezondheidscentrum Oost",
+        "contact": "Dr. Karin van Dijk",
+        "kvk": "67890123",
+        "btw": "NL678901234B01",
+        "sector": "Zorg",
+        "omzet_ytd": 780000,
+        "omzet_prev": 720000,
+        "winst_ytd": 98000,
+        "openstaand": 23000,
+        "status": "green",
+        "accountant": "Thomas Bakker",
+        "alerts": [],
+        "last_activity": "1 dag geleden"
+    },
+    {
+        "id": "CL007",
+        "name": "Bakkerij Het Zoete Leven",
+        "contact": "Peter Willems",
+        "kvk": "78901234",
+        "btw": "NL789012345B01",
+        "sector": "Food & Beverage",
+        "omzet_ytd": 285000,
+        "omzet_prev": 260000,
+        "winst_ytd": 42000,
+        "openstaand": 12500,
+        "status": "green",
+        "accountant": "Sophie Jansen",
+        "alerts": [],
+        "last_activity": "2 dagen geleden"
+    },
+    {
+        "id": "CL008",
+        "name": "Architectenbureau Modern",
+        "contact": "Isabelle Dubois",
+        "kvk": "89012345",
+        "btw": "NL890123456B01",
+        "sector": "Zakelijke Diensten",
+        "omzet_ytd": 520000,
+        "omzet_prev": 485000,
+        "winst_ytd": 112000,
+        "openstaand": 78000,
+        "status": "green",
+        "accountant": "Lisa van der Berg",
+        "alerts": [],
+        "last_activity": "4 uur geleden"
+    },
+]
+
+FIRM_ALERTS = [
+    {"type": "urgent", "client": "Retail Mode B.V.", "message": "Liquiditeitsprobleem - direct actie vereist", "time": "30 min geleden"},
+    {"type": "warning", "client": "Restaurant De Gouden Lepel", "message": "BTW Q4 deadline over 5 dagen", "time": "2 uur geleden"},
+    {"type": "warning", "client": "Logistics Plus B.V.", "message": "DSO gestegen naar 62 dagen", "time": "5 uur geleden"},
+    {"type": "info", "client": "TechStart B.V.", "message": "Jaarrekening 2023 klaar voor review", "time": "1 dag geleden"},
+]
 
 # AI Agents (inclusive/international names)
 AI_AGENTS = {
@@ -210,7 +413,7 @@ AI_AGENTS = {
     }
 }
 
-# Demo Invoices
+# Demo Invoices (client-level)
 DEMO_INVOICES = [
     {"id": "F2024-001", "supplier": "Bouwmaterialen Jansen B.V.", "amount": 4750.00, "vat": 997.50, "date": "2024-01-15", "status": "verwerkt", "category": "Inkoop materialen", "rgs": "WIkworGro", "odoo_po": "PO2024-042"},
     {"id": "F2024-002", "supplier": "Transport De Vries", "amount": 1250.00, "vat": 262.50, "date": "2024-01-16", "status": "verwerkt", "category": "Transport", "rgs": "WKprUitTra", "odoo_po": "PO2024-038"},
@@ -248,89 +451,82 @@ ODOO_HR = {
     "employees": [
         {"name": "Jan Vermeer", "role": "Directeur", "salary": 7500, "fte": 1.0},
         {"name": "Karin de Boer", "role": "Projectleider", "salary": 5200, "fte": 1.0},
-        {"name": "Ahmed Hassan", "role": "Uitvoerder", "salary": 4500, "fte": 1.0},
-        {"name": "Maria Santos", "role": "Administratie", "salary": 3800, "fte": 0.8},
-        {"name": "Pieter Bakker", "role": "Timmerman", "salary": 4000, "fte": 1.0},
-        {"name": "Tom Visser", "role": "Metselaar", "salary": 3900, "fte": 1.0},
-        {"name": "Lisa van Dijk", "role": "Timmerman", "salary": 3800, "fte": 1.0},
-        {"name": "Kevin Jansen", "role": "Leerling", "salary": 2200, "fte": 1.0},
+        {"name": "Pieter Bakker", "role": "Voorman", "salary": 4500, "fte": 1.0},
+        {"name": "Sander Visser", "role": "Timmerman", "salary": 3800, "fte": 1.0},
+        {"name": "Ahmed El-Ahmadi", "role": "Metselaar", "salary": 3600, "fte": 1.0},
+        {"name": "Tomasz Kowalski", "role": "Metselaar", "salary": 3600, "fte": 1.0},
+        {"name": "Erik Jansen", "role": "Elektricien", "salary": 4000, "fte": 0.8},
+        {"name": "Mohammed Al-Rashid", "role": "Loodgieter", "salary": 3900, "fte": 1.0},
     ],
     "total_fte": 7.8,
-    "total_monthly_cost": 34900,
-    "wkr_budget": 5880,
-    "wkr_used": 3200,
+    "total_salary_costs": 36100,
+    "wkr_budget": 10830,  # 3% van loonsom
+    "wkr_used": 7250,
 }
 
-# RGS Winst & Verlies (Dutch Standard)
-RGS_PNL = {
-    "Netto-omzet": {
-        "WOmzNol": {"label": "Netto-omzet uit leveringen", "amount": 485000},
-        "WOmzNod": {"label": "Netto-omzet uit diensten", "amount": 127500},
+# RGS Mapping voor W&V
+RGS_WV = {
+    "WOmzNet": {"name": "Netto-omzet", "amount": 612500, "category": "Omzet"},
+    "WOmzOov": {"name": "Overige opbrengsten", "amount": 8500, "category": "Omzet"},
+    "WIkworGro": {"name": "Grond- en hulpstoffen", "amount": -185000, "category": "Kostprijs"},
+    "WIkworUitworInh": {"name": "Uitbesteed werk", "amount": -95000, "category": "Kostprijs"},
+    "WPersLonSal": {"name": "Lonen en salarissen", "amount": -180000, "category": "Personeelskosten"},
+    "WPersSocLas": {"name": "Sociale lasten", "amount": -42000, "category": "Personeelskosten"},
+    "WPersPenLas": {"name": "Pensioenlasten", "amount": -18000, "category": "Personeelskosten"},
+    "WBehHuiHur": {"name": "Huur bedrijfspand", "amount": -36000, "category": "Huisvesting"},
+    "WBehHuiEne": {"name": "Energie", "amount": -8500, "category": "Huisvesting"},
+    "WBehVerBed": {"name": "Bedrijfsverzekeringen", "amount": -12000, "category": "Overig"},
+    "WBehAutAfsTrm": {"name": "Afschrijving transportmiddelen", "amount": -15000, "category": "Afschrijvingen"},
+    "WBehAutAfsMac": {"name": "Afschrijving machines", "amount": -8500, "category": "Afschrijvingen"},
+    "WFinRenRba": {"name": "Rentelasten bankschuld", "amount": -4200, "category": "Financieel"},
+}
+
+# RGS Mapping voor Balans
+RGS_BALANS = {
+    "activa": {
+        "BIvaMatTer": {"name": "Terreinen", "amount": 125000},
+        "BIvaMatBeg": {"name": "Bedrijfsgebouwen", "amount": 285000},
+        "BIvaMatMae": {"name": "Machines en installaties", "amount": 95000},
+        "BIvaMatTrm": {"name": "Transportmiddelen", "amount": 68000},
+        "BVrdVor": {"name": "Voorraden grondstoffen", "amount": 42000},
+        "BVorDebHad": {"name": "Debiteuren", "amount": 142000},
+        "BLimBan": {"name": "Bankrekeningen", "amount": 89000},
+        "BLimKas": {"name": "Kas", "amount": 2500},
     },
-    "Kostprijs van de omzet": {
-        "WIkworGro": {"label": "Grond- en hulpstoffen", "amount": -142500},
-        "WKprUitInh": {"label": "Uitbesteed werk / ingehuurde diensten", "amount": -68000},
-        "WKprUitTra": {"label": "Transportkosten", "amount": -18500},
-    },
-    "Personeelskosten": {
-        "WPerLes": {"label": "Lonen en salarissen", "amount": -165000},
-        "WPerSol": {"label": "Sociale lasten", "amount": -38500},
-        "WPerPen": {"label": "Pensioenlasten", "amount": -24000},
-    },
-    "Overige bedrijfskosten": {
-        "WBehHuiHuu": {"label": "Huur", "amount": -36000},
-        "WBehHuiEne": {"label": "Energie", "amount": -12400},
-        "WBehVerBed": {"label": "Verzekeringen", "amount": -8200},
-        "WBehAutSof": {"label": "Software & automatisering", "amount": -7800},
-        "WBehKanTel": {"label": "Telefoon & communicatie", "amount": -3600},
-        "WBehAdvAdv": {"label": "Advieskosten", "amount": -15000},
-    },
-    "Afschrijvingen": {
-        "WAfsMat": {"label": "Afschrijving materiële vaste activa", "amount": -28000},
-    },
-    "Financiële baten en lasten": {
-        "WFbeRon": {"label": "Rentebaten", "amount": 1250},
-        "WFlaRba": {"label": "Rentelasten", "amount": -8500},
+    "passiva": {
+        "BEivGok": {"name": "Gestort kapitaal", "amount": 100000},
+        "BEivOvr": {"name": "Overige reserves", "amount": 285000},
+        "BEivWin": {"name": "Onverdeeld resultaat", "amount": 89400},
+        "BLasLls": {"name": "Langlopende schulden", "amount": 180000},
+        "BSchCreHan": {"name": "Crediteuren", "amount": 78000},
+        "BSchBelBtw": {"name": "BTW schuld", "amount": 45000},
+        "BSchBelLhe": {"name": "Loonheffing", "amount": 18000},
+        "BSchOvrOvs": {"name": "Overige schulden", "amount": 53100},
     }
 }
 
-# RGS Balans (Dutch Standard)
-RGS_BALANCE = {
-    "ACTIVA": {
-        "Vaste activa": {
-            "BMvaTer": {"label": "Terreinen", "amount": 125000},
-            "BMvaBeg": {"label": "Bedrijfsgebouwen", "amount": 380000},
-            "BMvaMei": {"label": "Machines en installaties", "amount": 95000},
-            "BMvaVer": {"label": "Vervoermiddelen", "amount": 68000},
-            "BMvaKan": {"label": "Inventaris", "amount": 24000},
-        },
-        "Vlottende activa": {
-            "BVrdVoo": {"label": "Voorraden", "amount": 87500},
-            "BVorDebHan": {"label": "Debiteuren", "amount": 142000},
-            "BVorOvrBel": {"label": "Belastingvorderingen", "amount": 28500},
-            "BLimBan": {"label": "Bank", "amount": 156000},
-            "BLimKas": {"label": "Kas", "amount": 2500},
-        }
-    },
-    "PASSIVA": {
-        "Eigen vermogen": {
-            "BEivGok": {"label": "Gestort kapitaal", "amount": 250000},
-            "BEivAlr": {"label": "Algemene reserve", "amount": 185000},
-            "BEivOwi": {"label": "Onverdeelde winst", "amount": 47750},
-        },
-        "Langlopende schulden": {
-            "BLasLba": {"label": "Lening bank", "amount": 320000},
-        },
-        "Kortlopende schulden": {
-            "BSchCreHan": {"label": "Crediteuren", "amount": 98500},
-            "BSchBepLoo": {"label": "Loonbelasting", "amount": 18500},
-            "BSchBepOmb": {"label": "Omzetbelasting", "amount": 32750},
-            "BSchOvsPen": {"label": "Pensioenpremies", "amount": 8000},
-        }
-    }
-}
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
 
-# Sidebar navigation
+def format_currency(amount):
+    """Format number as Dutch currency"""
+    if amount >= 0:
+        return f"€ {amount:,.0f}".replace(",", ".")
+    else:
+        return f"€ {amount:,.0f}".replace(",", ".")
+
+def get_client_by_id(client_id):
+    """Get client data by ID"""
+    for client in DEMO_CLIENTS:
+        if client['id'] == client_id:
+            return client
+    return DEMO_CLIENTS[0]  # Default to first client
+
+# ============================================
+# SIDEBAR NAVIGATION
+# ============================================
+
 with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 20px 0;">
@@ -341,850 +537,960 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Client info
-    st.markdown(f"""
-    <div style="background: #f1f5f9; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
-        <p style="color: #64748b; font-size: 11px; margin: 0;">DEMO KLANT</p>
-        <p style="color: #0f172a; font-weight: 600; margin: 4px 0;">{DEMO_CLIENT['name']}</p>
-        <p style="color: #64748b; font-size: 12px; margin: 0;">{DEMO_CLIENT['contact']}</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Navigation
-    st.markdown("**NAVIGATIE**")
-    
-    nav_options = {
-        "🎯 Dashboard": "dashboard",
-        "📄 Facturen": "invoices",
-        "📊 Winst & Verlies": "pnl",
-        "⚖️ Balans": "balance",
-        "🤖 AI Agents": "agents",
-        "💬 Chat met ALEX": "chat",
-        "📈 Forecasting": "forecast"
-    }
-    
-    for label, view in nav_options.items():
-        if st.button(label, key=f"nav_{view}", use_container_width=True):
-            st.session_state.current_view = view
-    
-    # Odoo section
-    st.markdown("---")
-    st.markdown("""<span class="odoo-badge">ODOO INTEGRATIE</span>""", unsafe_allow_html=True)
-    st.markdown("")
-    
-    odoo_options = {
-        "🎯 CRM Pipeline": "crm",
-        "📦 Inkoop (PO's)": "purchase",
-        "👥 HR & Personeel": "hr",
-    }
-    
-    for label, view in odoo_options.items():
-        if st.button(label, key=f"nav_{view}", use_container_width=True):
-            st.session_state.current_view = view
-
-# Main content based on navigation
-if st.session_state.current_view == 'dashboard':
-    st.title("🎯 Mijn Financiële Cockpit")
-    st.markdown(f"Welkom terug, **{DEMO_CLIENT['contact']}** | {datetime.now().strftime('%d %B %Y')}")
-    
-    # KPI Cards
-    col1, col2, col3, col4 = st.columns(4)
-    
+    # Portal Toggle
+    st.markdown("**PORTAL**")
+    col1, col2 = st.columns(2)
     with col1:
-        st.metric(
-            label="Omzet YTD",
-            value="€ 612.500",
-            delta="+12.3% vs vorig jaar"
-        )
-    
+        if st.button("🏢 Kantoor", key="portal_kantoor", use_container_width=True, 
+                     type="primary" if st.session_state.portal_mode == 'kantoor' else "secondary"):
+            st.session_state.portal_mode = 'kantoor'
+            st.session_state.current_view = 'dashboard'
+            st.session_state.selected_client = None
+            st.rerun()
     with col2:
-        st.metric(
-            label="Brutomarge",
-            value="34.2%",
-            delta="+2.1pp"
-        )
-    
-    with col3:
-        st.metric(
-            label="Openstaande facturen",
-            value="€ 142.000",
-            delta="-€23.500 deze week"
-        )
-    
-    with col4:
-        st.metric(
-            label="Cashflow prognose (30d)",
-            value="€ 89.200",
-            delta="Positief"
-        )
+        if st.button("👤 Klant", key="portal_klant", use_container_width=True,
+                     type="primary" if st.session_state.portal_mode == 'klant' else "secondary"):
+            st.session_state.portal_mode = 'klant'
+            st.session_state.current_view = 'dashboard'
+            st.rerun()
     
     st.markdown("---")
     
-    # Odoo Pipeline Summary
-    st.subheader("🎯 CRM Pipeline Overzicht")
-    st.markdown('<span class="odoo-badge">VIA ODOO</span>', unsafe_allow_html=True)
-    
-    pipeline_cols = st.columns(5)
-    stages = ["Lead", "Kwalificatie", "Voorstel", "Onderhandeling", "Gewonnen"]
-    stage_colors = ["#64748b", "#8b5cf6", "#3b82f6", "#f59e0b", "#10b981"]
-    
-    for i, (stage, color) in enumerate(zip(stages, stage_colors)):
-        deals = [d for d in ODOO_CRM_PIPELINE if d['stage'] == stage]
-        total = sum(d['amount'] for d in deals)
-        with pipeline_cols[i]:
-            st.markdown(f"""
-            <div style="background: white; padding: 16px; border-radius: 12px; border-top: 4px solid {color}; text-align: center;">
-                <p style="color: #64748b; font-size: 12px; margin: 0;">{stage}</p>
-                <p style="color: #0f172a; font-size: 24px; font-weight: 700; margin: 8px 0;">€ {total:,.0f}</p>
-                <p style="color: #64748b; font-size: 11px; margin: 0;">{len(deals)} deal(s)</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Charts row
-    col_left, col_right = st.columns(2)
-    
-    with col_left:
-        st.subheader("📈 Omzet vs Kosten")
+    # Different navigation based on portal mode
+    if st.session_state.portal_mode == 'kantoor':
+        # KANTOOR PORTAL NAVIGATION
+        st.markdown("**MISSION CONTROL**")
         
-        months = ['Aug', 'Sep', 'Okt', 'Nov', 'Dec', 'Jan']
-        omzet = [85000, 92000, 88000, 95000, 110000, 97500]
-        kosten = [62000, 68000, 65000, 71000, 78000, 72000]
-        
-        fig = go.Figure()
-        fig.add_trace(go.Bar(name='Omzet', x=months, y=omzet, marker_color='#14b8a6'))
-        fig.add_trace(go.Bar(name='Kosten', x=months, y=kosten, marker_color='#0f172a'))
-        fig.update_layout(
-            barmode='group',
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(l=0, r=0, t=20, b=0),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            height=300
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col_right:
-        st.subheader("💰 Cashflow Forecast")
-        st.caption("🔗 Inclusief verwachte pipeline-inkomsten")
-        
-        weeks = ['Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8']
-        cashflow = [45000, 28000, 52000, 38000, 89200]
-        colors = ['#14b8a6' if x > 0 else '#ef4444' for x in cashflow]
-        
-        fig = go.Figure(data=[go.Bar(x=weeks, y=cashflow, marker_color=colors)])
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(l=0, r=0, t=20, b=0),
-            height=300
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Agent status row
-    st.markdown("---")
-    st.subheader("🤖 AI Agents Status")
-    
-    agent_cols = st.columns(5)
-    for i, (name, agent) in enumerate(AI_AGENTS.items()):
-        with agent_cols[i]:
-            st.markdown(f"""
-            <div style="background: white; padding: 16px; border-radius: 12px; border-left: 4px solid {agent['color']}; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600; color: #0f172a;">{name}</span>
-                    <span class="status-active">{agent['status']}</span>
-                </div>
-                <p style="color: #64748b; font-size: 12px; margin: 8px 0;">{agent['role']}</p>
-                <p style="color: #0f172a; font-size: 20px; font-weight: 700; margin: 0;">{agent['processed_today']}</p>
-                <p style="color: #64748b; font-size: 11px; margin: 0;">verwerkt vandaag</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-elif st.session_state.current_view == 'crm':
-    st.title("🎯 CRM Pipeline")
-    st.markdown('<span class="odoo-badge">ODOO CRM</span> Beheer je sales pipeline en deals', unsafe_allow_html=True)
-    
-    # Pipeline Summary
-    col1, col2, col3, col4 = st.columns(4)
-    
-    total_pipeline = sum(d['amount'] for d in ODOO_CRM_PIPELINE)
-    weighted_pipeline = sum(d['amount'] * d['probability'] / 100 for d in ODOO_CRM_PIPELINE)
-    won_deals = sum(d['amount'] for d in ODOO_CRM_PIPELINE if d['stage'] == 'Gewonnen')
-    
-    with col1:
-        st.metric("Totale Pipeline", f"€ {total_pipeline:,.0f}")
-    with col2:
-        st.metric("Gewogen Waarde", f"€ {weighted_pipeline:,.0f}")
-    with col3:
-        st.metric("Gewonnen (YTD)", f"€ {won_deals:,.0f}")
-    with col4:
-        st.metric("Conversie %", "23%", delta="+5% vs Q4")
-    
-    st.markdown("---")
-    
-    # Pipeline Funnel
-    st.subheader("📊 Pipeline Funnel")
-    
-    stages = ["Lead", "Kwalificatie", "Voorstel", "Onderhandeling", "Gewonnen"]
-    stage_values = []
-    for stage in stages:
-        deals = [d for d in ODOO_CRM_PIPELINE if d['stage'] == stage]
-        stage_values.append(sum(d['amount'] for d in deals))
-    
-    fig = go.Figure(go.Funnel(
-        y = stages,
-        x = stage_values,
-        textposition = "inside",
-        textinfo = "value+percent initial",
-        marker = {"color": ["#64748b", "#8b5cf6", "#3b82f6", "#f59e0b", "#10b981"]},
-        texttemplate = "€%{value:,.0f}<br>%{percentInitial:.0%}"
-    ))
-    fig.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        height=400
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    st.markdown("---")
-    
-    # Deal List
-    st.subheader("📋 Alle Deals")
-    
-    # Filter
-    stage_filter = st.multiselect("Filter op fase:", stages, default=stages)
-    
-    for deal in ODOO_CRM_PIPELINE:
-        if deal['stage'] not in stage_filter:
-            continue
-            
-        stage_colors = {
-            "Lead": "#64748b",
-            "Kwalificatie": "#8b5cf6",
-            "Voorstel": "#3b82f6",
-            "Onderhandeling": "#f59e0b",
-            "Gewonnen": "#10b981"
+        kantoor_nav = {
+            "🎯 Overzicht": "dashboard",
+            "👥 Klantenportfolio": "clients",
+            "📋 Teamworkload": "team",
+            "🚨 Alerts & Acties": "alerts",
+            "🤖 AI Agents Overzicht": "agents",
         }
         
-        with st.expander(f"**{deal['name']}** - {deal['client']} | € {deal['amount']:,.0f}"):
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.markdown(f"""
-                **Deal Details**
-                - **Fase:** <span style="background: {stage_colors[deal['stage']]}20; color: {stage_colors[deal['stage']]}; padding: 2px 8px; border-radius: 4px;">{deal['stage']}</span>
-                - **Waarde:** € {deal['amount']:,.0f}
-                - **Kans:** {deal['probability']}%
-                - **Gewogen:** € {deal['amount'] * deal['probability'] / 100:,.0f}
-                """, unsafe_allow_html=True)
-            
-            with col2:
-                st.markdown(f"""
-                **Contact**
-                - **Naam:** {deal['contact']}
-                - **Email:** {deal['email']}
-                - **Telefoon:** {deal['phone']}
-                """)
-            
-            with col3:
-                st.markdown(f"""
-                **Status**
-                - **Verwachte closing:** {deal['expected_close']}
-                - **Notities:** {deal['notes']}
-                """)
-            
-            # LUNA Insight
-            if deal['probability'] >= 50:
-                expected_income = deal['amount'] * deal['probability'] / 100
-                st.info(f"💡 **LUNA Insight:** Deze deal heeft {deal['probability']}% kans. Als gewonnen, verwacht ik de eerste betaling (30%) rond {deal['expected_close']}. Dit is € {expected_income * 0.3:,.0f} voor je cashflow.")
-            
-            col_a, col_b, col_c = st.columns(3)
-            with col_a:
-                if st.button("📧 Email versturen", key=f"email_{deal['id']}"):
-                    st.success("Email concept geopend!")
-            with col_b:
-                if st.button("📞 Bel notitie", key=f"call_{deal['id']}"):
-                    st.info("Bel notitie venster...")
-            with col_c:
-                if st.button("➡️ Volgende fase", key=f"next_{deal['id']}"):
-                    st.success(f"Deal verplaatst naar volgende fase!")
-
-elif st.session_state.current_view == 'purchase':
-    st.title("📦 Inkoop & Purchase Orders")
-    st.markdown('<span class="odoo-badge">ODOO PURCHASE</span> Beheer je inkooporders en leveranciers', unsafe_allow_html=True)
+        for label, view in kantoor_nav.items():
+            if st.button(label, key=f"knav_{view}", use_container_width=True):
+                st.session_state.current_view = view
+        
+        # Quick client lookup
+        st.markdown("---")
+        st.markdown("**KLANT ZOEKEN**")
+        client_names = [c['name'] for c in DEMO_CLIENTS]
+        selected = st.selectbox("Selecteer klant", [""] + client_names, key="client_lookup", label_visibility="collapsed")
+        if selected:
+            for c in DEMO_CLIENTS:
+                if c['name'] == selected:
+                    if st.button(f"📂 Naar {c['name']}", key="goto_client", use_container_width=True):
+                        st.session_state.selected_client = c['id']
+                        st.session_state.portal_mode = 'klant'
+                        st.session_state.current_view = 'dashboard'
+                        st.rerun()
     
-    # Stats
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Open PO's", "5")
-    with col2:
-        st.metric("Totaal open", f"€ {sum(po['amount'] for po in ODOO_PURCHASE_ORDERS):,.0f}")
-    with col3:
-        st.metric("Deze maand", f"€ {sum(po['amount'] for po in ODOO_PURCHASE_ORDERS):,.0f}")
-    with col4:
-        st.metric("Gemiddelde levertijd", "4.2 dagen")
-    
-    st.markdown("---")
-    st.subheader("📋 Purchase Orders")
-    
-    for po in ODOO_PURCHASE_ORDERS:
-        status_colors = {"Geleverd": "#10b981", "Besteld": "#3b82f6", "Gepland": "#f59e0b"}
+    else:
+        # KLANT PORTAL NAVIGATION
+        # Show selected client info
+        if st.session_state.selected_client:
+            client = get_client_by_id(st.session_state.selected_client)
+        else:
+            client = DEMO_CLIENTS[0]
+            st.session_state.selected_client = client['id']
         
-        col1, col2, col3, col4, col5 = st.columns([1.5, 2.5, 1.5, 1.5, 1])
+        st.markdown(f"""
+        <div style="background: #f1f5f9; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+            <p style="color: #64748b; font-size: 11px; margin: 0;">KLANT</p>
+            <p style="color: #0f172a; font-weight: 600; margin: 4px 0;">{client['name']}</p>
+            <p style="color: #64748b; font-size: 12px; margin: 0;">{client['contact']}</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        with col1:
-            st.markdown(f"**{po['id']}**")
-            st.caption(po['date'])
-        
-        with col2:
-            st.markdown(po['supplier'])
-            project = next((d['name'] for d in ODOO_CRM_PIPELINE if d['id'] == po['project']), "Algemeen")
-            st.caption(f"🔗 {project}")
-        
-        with col3:
-            st.markdown(f"**€ {po['amount']:,.2f}**")
-        
-        with col4:
-            color = status_colors.get(po['status'], '#64748b')
-            st.markdown(f"<span style='background: {color}20; color: {color}; padding: 4px 12px; border-radius: 12px; font-size: 12px;'>{po['status']}</span>", unsafe_allow_html=True)
-        
-        with col5:
-            if st.button("👁️", key=f"po_{po['id']}"):
-                st.info(f"Details voor {po['id']}")
+        # Back to kantoor button
+        if st.button("← Terug naar Kantoor", key="back_to_kantoor", use_container_width=True):
+            st.session_state.portal_mode = 'kantoor'
+            st.session_state.current_view = 'dashboard'
+            st.rerun()
         
         st.markdown("---")
-    
-    # 3-way matching info
-    st.markdown("### 🔗 3-Way Matching met ARIA")
-    st.info("""
-    **Automatische factuurmatching actief!**
-    
-    ARIA controleert automatisch of inkomende facturen matchen met:
-    1. ✅ Purchase Order (bestelling)
-    2. ✅ Goods Receipt (ontvangst)
-    3. ✅ Invoice (factuur)
-    
-    Bij een mismatch wordt de factuur gemarkeerd voor review.
-    """)
+        
+        # Client navigation
+        st.markdown("**NAVIGATIE**")
+        
+        nav_options = {
+            "🎯 Dashboard": "dashboard",
+            "📄 Facturen": "invoices",
+            "📊 Winst & Verlies": "pnl",
+            "⚖️ Balans": "balance",
+            "🤖 AI Agents": "agents",
+            "💬 Chat met ALEX": "chat",
+            "📈 Forecasting": "forecast"
+        }
+        
+        for label, view in nav_options.items():
+            if st.button(label, key=f"cnav_{view}", use_container_width=True):
+                st.session_state.current_view = view
+        
+        # Odoo section
+        st.markdown("---")
+        st.markdown("""<span class="odoo-badge">ODOO INTEGRATIE</span>""", unsafe_allow_html=True)
+        st.markdown("")
+        
+        odoo_options = {
+            "🎯 CRM Pipeline": "crm",
+            "📦 Inkoop (PO's)": "purchase",
+            "👥 HR & Personeel": "hr",
+        }
+        
+        for label, view in odoo_options.items():
+            if st.button(label, key=f"onav_{view}", use_container_width=True):
+                st.session_state.current_view = view
 
-elif st.session_state.current_view == 'hr':
-    st.title("👥 HR & Personeel")
-    st.markdown('<span class="odoo-badge">ODOO HR</span> Personeelsoverzicht en loonkosten', unsafe_allow_html=True)
-    
-    # HR Stats
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Medewerkers", len(ODOO_HR['employees']))
-    with col2:
-        st.metric("Totaal FTE", ODOO_HR['total_fte'])
-    with col3:
-        st.metric("Loonkosten/maand", f"€ {ODOO_HR['total_monthly_cost']:,.0f}")
-    with col4:
-        wkr_remaining = ODOO_HR['wkr_budget'] - ODOO_HR['wkr_used']
-        st.metric("WKR ruimte over", f"€ {wkr_remaining:,.0f}")
-    
-    st.markdown("---")
-    
-    # Employee List
-    st.subheader("👥 Personeelsbestand")
-    
-    df_employees = pd.DataFrame(ODOO_HR['employees'])
-    df_employees['Bruto salaris'] = df_employees['salary'].apply(lambda x: f"€ {x:,.0f}")
-    df_employees.columns = ['Naam', 'Functie', 'Salaris', 'FTE', 'Bruto salaris']
-    
-    st.dataframe(
-        df_employees[['Naam', 'Functie', 'FTE', 'Bruto salaris']],
-        hide_index=True,
-        use_container_width=True
-    )
-    
-    st.markdown("---")
-    
-    # SAGE Insights
-    st.subheader("💡 SAGE Fiscale Inzichten")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("### WKR Analyse")
-        wkr_pct = (ODOO_HR['wkr_used'] / ODOO_HR['wkr_budget']) * 100
-        
-        fig = go.Figure(go.Indicator(
-            mode = "gauge+number+delta",
-            value = ODOO_HR['wkr_used'],
-            number = {'prefix': "€ ", 'valueformat': ",.0f"},
-            delta = {'reference': ODOO_HR['wkr_budget'], 'relative': False, 'valueformat': ",.0f"},
-            gauge = {
-                'axis': {'range': [None, ODOO_HR['wkr_budget']]},
-                'bar': {'color': "#14b8a6"},
-                'steps': [
-                    {'range': [0, ODOO_HR['wkr_budget'] * 0.8], 'color': "#dcfce7"},
-                    {'range': [ODOO_HR['wkr_budget'] * 0.8, ODOO_HR['wkr_budget']], 'color': "#fef3c7"}
-                ],
-                'threshold': {
-                    'line': {'color': "red", 'width': 4},
-                    'thickness': 0.75,
-                    'value': ODOO_HR['wkr_budget']
-                }
-            },
-            title = {'text': "WKR Benutting"}
-        ))
-        fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
-        st.plotly_chart(fig, use_container_width=True)
-        
-        st.success(f"✅ Nog **€ {wkr_remaining:,.0f}** WKR-ruimte beschikbaar dit jaar")
-    
-    with col2:
-        st.markdown("### SAGE Adviezen")
-        st.warning("""
-        **💡 Optimalisatie mogelijkheden:**
-        
-        1. **Fietsregeling**: 3 medewerkers komen in aanmerking. 
-           Potentiële besparing: € 1.200/jaar
-        
-        2. **Thuiswerkvergoeding**: Huidige regeling onder WKR.
-           Advies: verhoog naar € 2,35/dag (fiscaal optimaal)
-        
-        3. **Pensioenopbouw**: Kevin (leerling) bouwt nog geen 
-           pensioen op. Overweeg vrijwillige deelname.
-        """)
-        
-        if st.button("📊 Genereer volledig loonkosten rapport"):
-            st.info("SAGE genereert rapport...")
+# ============================================
+# MAIN CONTENT - KANTOOR PORTAL
+# ============================================
 
-elif st.session_state.current_view == 'invoices':
-    st.title("📄 Factuurverwerking")
-    st.markdown("Bekijk en beheer inkomende facturen met AI-ondersteuning van **ARIA**")
+if st.session_state.portal_mode == 'kantoor':
     
-    # Stats
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Nieuw", "4", delta="vandaag")
-    with col2:
-        st.metric("Wacht op review", "1")
-    with col3:
-        st.metric("Verwerkt", "3")
-    with col4:
-        st.metric("AI Nauwkeurigheid", "99.2%")
-    
-    st.markdown("---")
-    
-    # Invoice upload simulation
-    uploaded_file = st.file_uploader("📤 Upload een factuur (PDF/afbeelding)", type=['pdf', 'png', 'jpg', 'jpeg'])
-    
-    if uploaded_file:
-        with st.spinner("🤖 ARIA analyseert de factuur..."):
-            import time
-            time.sleep(2)
+    if st.session_state.current_view == 'dashboard':
+        # KANTOOR DASHBOARD - MISSION CONTROL
+        st.title("🏢 Mission Control")
+        st.markdown(f"**{FIRM_INFO['name']}** | {datetime.now().strftime('%d %B %Y')}")
         
-        st.success("✅ Factuur succesvol geanalyseerd!")
+        # Firm-wide KPIs
+        st.markdown("### 📊 Kantoor KPI's")
+        col1, col2, col3, col4, col5 = st.columns(5)
         
-        col1, col2 = st.columns(2)
         with col1:
-            st.markdown("**Herkende gegevens:**")
-            st.json({
-                "leverancier": "Demo Leverancier B.V.",
-                "factuurnummer": "F-2024-NEW",
-                "datum": datetime.now().strftime("%Y-%m-%d"),
-                "bedrag_excl": 1250.00,
-                "btw": 262.50,
-                "totaal": 1512.50,
-                "categorie": "Algemene kosten",
-                "rgs_code": "WBehOve",
-                "confidence": "98.5%",
-                "odoo_match": "PO2024-053 (98% match)"
-            })
+            st.metric("Actieve Klanten", "45", "+3 dit kwartaal")
         with col2:
-            st.markdown("**AI Suggestie:**")
-            st.info("💡 ARIA heeft een match gevonden met **PO2024-053** in Odoo Purchase. De bedragen komen overeen. 3-way matching is succesvol!")
+            total_omzet = sum(c['omzet_ytd'] for c in DEMO_CLIENTS)
+            st.metric("Totale Omzet Portfolio", format_currency(total_omzet), "+8.2%")
+        with col3:
+            st.metric("Openstaande Facturen", format_currency(sum(c['openstaand'] for c in DEMO_CLIENTS)), "")
+        with col4:
+            st.metric("Declarabiliteit", "78%", "+5%")
+        with col5:
+            st.metric("AI Verwerkingen Vandaag", "246", "")
+        
+        st.markdown("---")
+        
+        # Two columns: Alerts and Quick Overview
+        col_left, col_right = st.columns([1, 1])
+        
+        with col_left:
+            st.markdown("### 🚨 Actieve Alerts")
+            for alert in FIRM_ALERTS[:4]:
+                alert_class = "alert-card-red" if alert['type'] == 'urgent' else "alert-card"
+                icon = "🔴" if alert['type'] == 'urgent' else "🟡" if alert['type'] == 'warning' else "🔵"
+                st.markdown(f"""
+                <div class="{alert_class}">
+                    <strong>{icon} {alert['client']}</strong><br>
+                    <span style="color: #64748b;">{alert['message']}</span><br>
+                    <small style="color: #94a3b8;">{alert['time']}</small>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        with col_right:
+            st.markdown("### 📈 Portfolio Gezondheid")
+            # Status distribution
+            green = len([c for c in DEMO_CLIENTS if c['status'] == 'green'])
+            yellow = len([c for c in DEMO_CLIENTS if c['status'] == 'yellow'])
+            red = len([c for c in DEMO_CLIENTS if c['status'] == 'red'])
             
-            col_a, col_b = st.columns(2)
-            with col_a:
-                if st.button("✅ Goedkeuren & Boeken", type="primary"):
-                    st.success("Factuur geboekt!")
-            with col_b:
-                if st.button("✏️ Aanpassen"):
-                    st.info("Edit mode...")
-    
-    st.markdown("---")
-    st.subheader("📋 Factuuroverzicht")
-    
-    # Filter tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["Alle", "Nieuw (4)", "Wacht op review (1)", "Verwerkt (3)"])
-    
-    def show_invoice_list(invoices, tab_prefix):
-        for inv in invoices:
-            status_color = {"nieuw": "#3b82f6", "wacht op review": "#f59e0b", "verwerkt": "#10b981"}
-            col1, col2, col3, col4, col5 = st.columns([2, 3, 2, 2, 1])
+            fig = go.Figure(data=[go.Pie(
+                labels=['Gezond', 'Aandacht nodig', 'Kritiek'],
+                values=[green, yellow, red],
+                hole=0.6,
+                marker_colors=['#10b981', '#f59e0b', '#ef4444']
+            )])
+            fig.update_layout(
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=-0.1),
+                margin=dict(t=20, b=20, l=20, r=20),
+                height=250
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown("---")
+        
+        # Client Overview Table
+        st.markdown("### 👥 Klanten Overzicht (Top 8)")
+        
+        for client in DEMO_CLIENTS:
+            status_color = {"green": "#10b981", "yellow": "#f59e0b", "red": "#ef4444"}[client['status']]
+            growth = ((client['omzet_ytd'] / client['omzet_prev']) - 1) * 100 if client['omzet_prev'] > 0 else 0
+            growth_str = f"+{growth:.1f}%" if growth >= 0 else f"{growth:.1f}%"
+            growth_color = "#10b981" if growth >= 0 else "#ef4444"
             
-            with col1:
-                st.markdown(f"**{inv['id']}**")
-                st.caption(inv['date'])
-            with col2:
-                st.markdown(inv['supplier'])
-                if inv.get('odoo_po'):
-                    st.caption(f"🔗 {inv['odoo_po']}")
-                else:
-                    st.caption(f"RGS: {inv['rgs']}")
-            with col3:
-                st.markdown(f"€ {inv['amount']:,.2f}")
-                st.caption(f"BTW: € {inv['vat']:,.2f}")
-            with col4:
-                st.markdown(f"<span style='background: {status_color.get(inv['status'], '#gray')}20; color: {status_color.get(inv['status'], 'gray')}; padding: 4px 12px; border-radius: 12px; font-size: 12px;'>{inv['status'].upper()}</span>", unsafe_allow_html=True)
-            with col5:
-                if st.button("👁️", key=f"{tab_prefix}_view_{inv['id']}"):
-                    st.session_state.selected_invoice = inv
-            
-            st.markdown("---")
-    
-    with tab1:
-        show_invoice_list(DEMO_INVOICES, "all")
-    with tab2:
-        show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'nieuw'], "new")
-    with tab3:
-        show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'wacht op review'], "review")
-    with tab4:
-        show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'verwerkt'], "done")
-
-elif st.session_state.current_view == 'pnl':
-    st.title("📊 Winst & Verliesrekening")
-    st.markdown("Volgens Nederlandse RGS-standaard | Periode: januari 2024")
-    
-    # Summary metrics
-    total_revenue = sum(item['amount'] for cat in ['Netto-omzet'] for item in RGS_PNL.get(cat, {}).values())
-    total_costs = sum(item['amount'] for cat in RGS_PNL.keys() if cat != 'Netto-omzet' for item in RGS_PNL.get(cat, {}).values())
-    net_result = total_revenue + total_costs
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Totale omzet", f"€ {total_revenue:,.0f}")
-    with col2:
-        st.metric("Totale kosten", f"€ {abs(total_costs):,.0f}")
-    with col3:
-        st.metric("Netto resultaat", f"€ {net_result:,.0f}", delta=f"{(net_result/total_revenue*100):.1f}% marge")
-    
-    st.markdown("---")
-    
-    # Detailed P&L
-    for category, items in RGS_PNL.items():
-        with st.expander(f"**{category}**", expanded=True):
-            df_data = []
-            for code, data in items.items():
-                df_data.append({
-                    "RGS Code": code,
-                    "Omschrijving": data['label'],
-                    "Bedrag": f"€ {data['amount']:,.0f}"
-                })
-            
-            df = pd.DataFrame(df_data)
-            st.dataframe(df, hide_index=True, use_container_width=True)
-            
-            subtotal = sum(item['amount'] for item in items.values())
-            st.markdown(f"**Subtotaal: € {subtotal:,.0f}**")
-    
-    st.markdown("---")
-    st.markdown(f"### 🎯 Netto Resultaat: € {net_result:,.0f}")
-
-elif st.session_state.current_view == 'balance':
-    st.title("⚖️ Balans")
-    st.markdown("Volgens Nederlandse RGS-standaard | Per 31 januari 2024")
-    
-    # Calculate totals
-    total_activa = sum(
-        item['amount'] 
-        for section in RGS_BALANCE['ACTIVA'].values() 
-        for item in section.values()
-    )
-    total_passiva = sum(
-        item['amount'] 
-        for section in RGS_BALANCE['PASSIVA'].values() 
-        for item in section.values()
-    )
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric("Totaal Activa", f"€ {total_activa:,.0f}")
-    with col2:
-        st.metric("Totaal Passiva", f"€ {total_passiva:,.0f}")
-    
-    if total_activa == total_passiva:
-        st.success("✅ Balans is in evenwicht")
-    else:
-        st.error(f"⚠️ Balansverschil: € {total_activa - total_passiva:,.0f}")
-    
-    st.markdown("---")
-    
-    col_activa, col_passiva = st.columns(2)
-    
-    with col_activa:
-        st.subheader("ACTIVA")
-        for section_name, items in RGS_BALANCE['ACTIVA'].items():
-            with st.expander(f"**{section_name}**", expanded=True):
-                df_data = []
-                for code, data in items.items():
-                    df_data.append({
-                        "RGS": code,
-                        "Omschrijving": data['label'],
-                        "Bedrag": f"€ {data['amount']:,.0f}"
-                    })
-                df = pd.DataFrame(df_data)
-                st.dataframe(df, hide_index=True, use_container_width=True)
-                
-                subtotal = sum(item['amount'] for item in items.values())
-                st.markdown(f"**Subtotaal: € {subtotal:,.0f}**")
-    
-    with col_passiva:
-        st.subheader("PASSIVA")
-        for section_name, items in RGS_BALANCE['PASSIVA'].items():
-            with st.expander(f"**{section_name}**", expanded=True):
-                df_data = []
-                for code, data in items.items():
-                    df_data.append({
-                        "RGS": code,
-                        "Omschrijving": data['label'],
-                        "Bedrag": f"€ {data['amount']:,.0f}"
-                    })
-                df = pd.DataFrame(df_data)
-                st.dataframe(df, hide_index=True, use_container_width=True)
-                
-                subtotal = sum(item['amount'] for item in items.values())
-                st.markdown(f"**Subtotaal: € {subtotal:,.0f}**")
-
-elif st.session_state.current_view == 'agents':
-    st.title("🤖 AI Agents")
-    st.markdown("Uw digitale collega's - altijd beschikbaar, continu lerend")
-    
-    for name, agent in AI_AGENTS.items():
-        with st.expander(f"**{name}** - {agent['full_name']}", expanded=True):
-            col1, col2, col3 = st.columns([2, 1, 1])
+            col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 1])
             
             with col1:
                 st.markdown(f"""
-                <div style="border-left: 4px solid {agent['color']}; padding-left: 16px;">
-                    <h4 style="margin: 0; color: {agent['color']};">{agent['role']}</h4>
-                    <p style="color: #64748b; margin: 8px 0;">{agent['description']}</p>
-                    <p style="margin: 4px 0;"><span class="odoo-badge">ODOO</span> <span style="color: #64748b; font-size: 12px; margin-left: 8px;">{agent['odoo_link']}</span></p>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: {status_color};"></div>
+                    <div>
+                        <strong>{client['name']}</strong><br>
+                        <small style="color: #64748b;">{client['sector']}</small>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"**{format_currency(client['omzet_ytd'])}**<br><small style='color: {growth_color};'>{growth_str}</small>", unsafe_allow_html=True)
+            with col3:
+                st.markdown(f"**{format_currency(client['winst_ytd'])}**<br><small style='color: #64748b;'>Resultaat</small>", unsafe_allow_html=True)
+            with col4:
+                st.markdown(f"**{format_currency(client['openstaand'])}**<br><small style='color: #64748b;'>Openstaand</small>", unsafe_allow_html=True)
+            with col5:
+                st.markdown(f"**{client['accountant']}**<br><small style='color: #64748b;'>{client['last_activity']}</small>", unsafe_allow_html=True)
+            with col6:
+                if st.button("→", key=f"goto_{client['id']}", help=f"Naar {client['name']}"):
+                    st.session_state.selected_client = client['id']
+                    st.session_state.portal_mode = 'klant'
+                    st.session_state.current_view = 'dashboard'
+                    st.rerun()
+            
+            st.markdown("<hr style='margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+    
+    elif st.session_state.current_view == 'clients':
+        # KLANTENPORTFOLIO
+        st.title("👥 Klantenportfolio")
+        
+        # Filters
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            status_filter = st.selectbox("Status", ["Alle", "Gezond", "Aandacht nodig", "Kritiek"])
+        with col2:
+            sector_filter = st.selectbox("Sector", ["Alle"] + list(set(c['sector'] for c in DEMO_CLIENTS)))
+        with col3:
+            accountant_filter = st.selectbox("Accountant", ["Alle"] + list(set(c['accountant'] for c in DEMO_CLIENTS)))
+        
+        # Filter clients
+        filtered_clients = DEMO_CLIENTS.copy()
+        if status_filter != "Alle":
+            status_map = {"Gezond": "green", "Aandacht nodig": "yellow", "Kritiek": "red"}
+            filtered_clients = [c for c in filtered_clients if c['status'] == status_map.get(status_filter)]
+        if sector_filter != "Alle":
+            filtered_clients = [c for c in filtered_clients if c['sector'] == sector_filter]
+        if accountant_filter != "Alle":
+            filtered_clients = [c for c in filtered_clients if c['accountant'] == accountant_filter]
+        
+        st.markdown(f"**{len(filtered_clients)} klanten gevonden**")
+        st.markdown("---")
+        
+        # Client cards
+        for client in filtered_clients:
+            status_class = f"client-status-{client['status']}"
+            alert_html = ""
+            if client['alerts']:
+                alert_html = f"<br><span style='color: #f59e0b; font-size: 12px;'>⚠️ {len(client['alerts'])} alert(s)</span>"
+            
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.markdown(f"""
+                <div class="client-card {status_class}">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h3 style="margin: 0 0 8px 0;">{client['name']}</h3>
+                            <p style="color: #64748b; margin: 0;">{client['contact']} | {client['sector']}</p>
+                            <p style="color: #64748b; font-size: 12px; margin: 4px 0 0 0;">Accountant: {client['accountant']}{alert_html}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="font-size: 24px; font-weight: 700; margin: 0; color: #0f172a;">{format_currency(client['omzet_ytd'])}</p>
+                            <p style="color: #64748b; font-size: 12px; margin: 0;">Omzet YTD</p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                if st.button("Bekijk →", key=f"view_{client['id']}", use_container_width=True):
+                    st.session_state.selected_client = client['id']
+                    st.session_state.portal_mode = 'klant'
+                    st.session_state.current_view = 'dashboard'
+                    st.rerun()
+    
+    elif st.session_state.current_view == 'team':
+        # TEAM WORKLOAD
+        st.title("📋 Team Workload")
+        st.markdown(f"**{FIRM_INFO['name']}** | {len(TEAM_MEMBERS)} teamleden")
+        
+        st.markdown("---")
+        
+        for member in TEAM_MEMBERS:
+            workload_color = "#10b981" if member['workload'] < 80 else "#f59e0b" if member['workload'] < 90 else "#ef4444"
+            
+            col1, col2, col3, col4 = st.columns([2, 1, 3, 1])
+            
+            with col1:
+                st.markdown(f"""
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 32px;">{member['avatar']}</span>
+                    <div>
+                        <strong>{member['name']}</strong><br>
+                        <small style="color: #64748b;">{member['role']}</small>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col2:
-                st.metric("Verwerkt vandaag", agent['processed_today'])
+                st.metric("Klanten", member['clients'])
             
             with col3:
-                st.metric("Nauwkeurigheid", f"{agent['accuracy']}%")
+                st.progress(member['workload'] / 100)
+                st.markdown(f"<small style='color: {workload_color};'>{member['workload']}% bezetting</small>", unsafe_allow_html=True)
             
-            # Activity simulation
-            st.markdown("**Recente activiteit:**")
-            activities = [
-                f"✅ Document verwerkt - {datetime.now() - timedelta(minutes=random.randint(1, 30))}",
-                f"✅ Analyse voltooid - {datetime.now() - timedelta(minutes=random.randint(31, 60))}",
-                f"💡 Advies gegenereerd - {datetime.now() - timedelta(hours=random.randint(1, 3))}",
-            ]
-            for activity in activities[:2]:
-                st.caption(activity)
+            with col4:
+                if member['workload'] >= 90:
+                    st.warning("Overbelast")
+                elif member['workload'] >= 80:
+                    st.info("Druk")
+                else:
+                    st.success("OK")
+            
+            st.markdown("---")
+        
+        # Team stats
+        st.markdown("### 📊 Team Statistieken")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            avg_workload = sum(m['workload'] for m in TEAM_MEMBERS) / len(TEAM_MEMBERS)
+            st.metric("Gemiddelde Bezetting", f"{avg_workload:.0f}%")
+        with col2:
+            total_clients = sum(m['clients'] for m in TEAM_MEMBERS)
+            st.metric("Totaal Klanten", total_clients)
+        with col3:
+            overloaded = len([m for m in TEAM_MEMBERS if m['workload'] >= 90])
+            st.metric("Teamleden Overbelast", overloaded)
+    
+    elif st.session_state.current_view == 'alerts':
+        # ALERTS & ACTIES
+        st.title("🚨 Alerts & Acties")
+        
+        # Alert summary
+        urgent = len([a for a in FIRM_ALERTS if a['type'] == 'urgent'])
+        warning = len([a for a in FIRM_ALERTS if a['type'] == 'warning'])
+        info = len([a for a in FIRM_ALERTS if a['type'] == 'info'])
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("🔴 Urgent", urgent)
+        with col2:
+            st.metric("🟡 Waarschuwing", warning)
+        with col3:
+            st.metric("🔵 Informatief", info)
+        
+        st.markdown("---")
+        
+        # Alert list
+        for alert in FIRM_ALERTS:
+            alert_class = "alert-card-red" if alert['type'] == 'urgent' else "alert-card"
+            icon = "🔴" if alert['type'] == 'urgent' else "🟡" if alert['type'] == 'warning' else "🔵"
+            
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.markdown(f"""
+                <div class="{alert_class}">
+                    <strong>{icon} {alert['client']}</strong><br>
+                    <span>{alert['message']}</span><br>
+                    <small style="color: #94a3b8;">{alert['time']}</small>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                # Find the client and go to their dashboard
+                for c in DEMO_CLIENTS:
+                    if c['name'] == alert['client']:
+                        if st.button("Bekijk →", key=f"alert_{alert['client']}_{alert['time']}", use_container_width=True):
+                            st.session_state.selected_client = c['id']
+                            st.session_state.portal_mode = 'klant'
+                            st.session_state.current_view = 'dashboard'
+                            st.rerun()
+                        break
+    
+    elif st.session_state.current_view == 'agents':
+        # AI AGENTS OVERZICHT (KANTOOR LEVEL)
+        st.title("🤖 AI Agents - Kantoor Overzicht")
+        st.markdown("Alle AI-agents actief over het hele klantenportfolio")
+        
+        # Summary stats
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            total_processed = sum(a['processed_today'] for a in AI_AGENTS.values())
+            st.metric("Totaal Verwerkt Vandaag", total_processed)
+        with col2:
+            avg_accuracy = sum(a['accuracy'] for a in AI_AGENTS.values()) / len(AI_AGENTS)
+            st.metric("Gemiddelde Nauwkeurigheid", f"{avg_accuracy:.1f}%")
+        with col3:
+            st.metric("Actieve Agents", len(AI_AGENTS))
+        with col4:
+            st.metric("Besparing (geschat)", "€ 12.400/maand")
+        
+        st.markdown("---")
+        
+        for name, agent in AI_AGENTS.items():
+            st.markdown(f"""
+            <div class="agent-card agent-{name.lower()}">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="margin: 0; color: {agent['color']};">{name}</h3>
+                        <p style="color: #64748b; margin: 4px 0;">{agent['full_name']}</p>
+                        <p style="margin: 4px 0;">{agent['description']}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="font-size: 28px; font-weight: 700; margin: 0;">{agent['processed_today']}</p>
+                        <p style="color: #64748b; font-size: 12px;">verwerkt vandaag</p>
+                        <p style="color: #10b981; font-weight: 600;">{agent['accuracy']}% nauwkeurig</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-elif st.session_state.current_view == 'chat':
-    st.title("💬 Chat met ALEX")
-    st.markdown("Uw AI-assistent voor al uw financiële vragen")
+# ============================================
+# MAIN CONTENT - KLANT PORTAL
+# ============================================
+
+else:  # portal_mode == 'klant'
     
-    # Chat responses
-    ALEX_RESPONSES = {
-        "btw": "Op basis van uw administratie heeft u dit kwartaal **€ 32.750** aan BTW te betalen. De deadline is 28 februari. Wilt u dat ik een herinnering instel?",
-        "cashflow": "Uw cashflow voor de komende 30 dagen ziet er positief uit: **€ 89.200** verwacht saldo. Inclusief de verwachte binnenkomst van **€ 23.400** uit de deal 'Aanbouw Praktijkruimte Amersfoort' (via Odoo CRM).",
-        "factuur": "Er staan momenteel **8 facturen** open ter waarde van **€ 142.000**. De oudste is 45 dagen oud van Bouwbedrijf De Groot. Wilt u dat ik een betalingsherinnering opstel?",
-        "winst": "Uw netto resultaat YTD is **€ 47.750**, een marge van 7.8%. Dit is 12% hoger dan dezelfde periode vorig jaar. De grootste kostenpost is personeel (38% van de omzet).",
-        "belasting": "SAGE heeft een fiscale optimalisatie gevonden: door de investeringsaftrek op de nieuwe machines kunt u mogelijk **€ 8.500** besparen. Zal ik een uitgebreide analyse maken?",
-        "pipeline": "Je Odoo CRM pipeline staat op **€ 1.461.000** totaal. De gewogen waarde (rekening houdend met kansen) is **€ 533.300**. De deal 'Nieuwbouw Villa Wassenaar' (€285K, 75% kans) is het meest kansrijk.",
-        "personeel": "Je hebt momenteel **8 medewerkers** (7.8 FTE). De maandelijkse loonkosten zijn **€ 34.900**. SAGE signaleert dat er nog **€ 2.680** WKR-ruimte over is dit jaar.",
-    }
+    # Get current client
+    if st.session_state.selected_client:
+        current_client = get_client_by_id(st.session_state.selected_client)
+    else:
+        current_client = DEMO_CLIENTS[0]
+        st.session_state.selected_client = current_client['id']
     
-    # Display chat history
-    for message in st.session_state.chat_history:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-    
-    # Chat input
-    if prompt := st.chat_input("Stel een vraag aan ALEX..."):
-        # Add user message
-        st.session_state.chat_history.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+    if st.session_state.current_view == 'dashboard':
+        st.title("🎯 Mijn Financiële Cockpit")
+        st.markdown(f"Welkom terug, **{current_client['contact']}** | {datetime.now().strftime('%d %B %Y')}")
         
-        # Generate response
-        response = "Ik begrijp uw vraag. Laat me even in uw gegevens kijken... "
-        prompt_lower = prompt.lower()
+        # KPI Cards
+        col1, col2, col3, col4 = st.columns(4)
         
-        for keyword, answer in ALEX_RESPONSES.items():
-            if keyword in prompt_lower:
-                response = answer
-                break
-        else:
-            response = f"Interessante vraag! Op basis van uw administratie en Odoo-data kan ik u vertellen dat {DEMO_CLIENT['name']} er financieel gezond voorstaat. De liquiditeitsratio is 1.8 en de solvabiliteit 42%. Heeft u een specifiekere vraag over uw BTW, cashflow, facturen, pipeline of personeel?"
+        with col1:
+            st.metric(
+                label="Omzet YTD",
+                value=format_currency(current_client['omzet_ytd']),
+                delta=f"+{((current_client['omzet_ytd']/current_client['omzet_prev'])-1)*100:.1f}% vs vorig jaar"
+            )
         
-        # Add assistant response
-        st.session_state.chat_history.append({"role": "assistant", "content": response})
-        with st.chat_message("assistant"):
-            st.markdown(response)
-    
-    # Quick questions
-    st.markdown("---")
-    st.markdown("**💡 Snelle vragen:**")
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        if st.button("💰 Hoeveel BTW?"):
-            st.session_state.chat_history.append({"role": "user", "content": "Hoeveel BTW moet ik betalen?"})
-            st.session_state.chat_history.append({"role": "assistant", "content": ALEX_RESPONSES["btw"]})
-            st.rerun()
-    with col2:
-        if st.button("📈 Mijn pipeline?"):
-            st.session_state.chat_history.append({"role": "user", "content": "Hoe staat mijn pipeline ervoor?"})
-            st.session_state.chat_history.append({"role": "assistant", "content": ALEX_RESPONSES["pipeline"]})
-            st.rerun()
-    with col3:
-        if st.button("👥 Personeelskosten?"):
-            st.session_state.chat_history.append({"role": "user", "content": "Wat zijn mijn personeelskosten?"})
-            st.session_state.chat_history.append({"role": "assistant", "content": ALEX_RESPONSES["personeel"]})
-            st.rerun()
-    with col4:
-        if st.button("💵 Cashflow?"):
-            st.session_state.chat_history.append({"role": "user", "content": "Wat is mijn cashflow?"})
-            st.session_state.chat_history.append({"role": "assistant", "content": ALEX_RESPONSES["cashflow"]})
+        with col2:
+            marge = (current_client['winst_ytd'] / current_client['omzet_ytd'] * 100) if current_client['omzet_ytd'] > 0 else 0
+            st.metric(
+                label="Winstmarge",
+                value=f"{marge:.1f}%",
+                delta="+2.1pp"
+            )
+        
+        with col3:
+            st.metric(
+                label="Openstaande facturen",
+                value=format_currency(current_client['openstaand']),
+                delta="-€23.500 deze week"
+            )
+        
+        with col4:
+            st.metric(
+                label="Cashflow prognose (30d)",
+                value="€ 89.200",
+                delta="Positief"
+            )
+        
+        # Charts row
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 📈 Omzet Verloop")
+            months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+            omzet_data = [45000, 52000, 48000, 61000, 55000, 58000, 62000, 59000, 67000, 71000, 68000, 66000]
+            
+            fig = px.line(x=months, y=omzet_data, markers=True)
+            fig.update_traces(line_color='#14b8a6', line_width=3)
+            fig.update_layout(
+                xaxis_title="", yaxis_title="",
+                margin=dict(t=20, b=20),
+                height=250
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            st.markdown("### 💰 Kosten Verdeling")
+            kosten_data = {
+                'Categorie': ['Personeel', 'Materialen', 'Huisvesting', 'Overig'],
+                'Bedrag': [240000, 185000, 44500, 53300]
+            }
+            fig = px.pie(kosten_data, values='Bedrag', names='Categorie', hole=0.5)
+            fig.update_traces(marker_colors=['#14b8a6', '#8b5cf6', '#f59e0b', '#64748b'])
+            fig.update_layout(margin=dict(t=20, b=20), height=250)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # AI Insights
+        st.markdown("---")
+        st.markdown("### 🤖 AI Inzichten")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("""
+            <div class="agent-card agent-sage">
+                <strong style="color: #f59e0b;">💡 SAGE - Fiscaal Tip</strong>
+                <p style="margin: 8px 0 0 0;">Overweeg de energie-investeringsaftrek (EIA) voor uw nieuwe machines. Potentiële besparing: €12.500</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("""
+            <div class="agent-card agent-luna">
+                <strong style="color: #3b82f6;">📊 LUNA - Prognose</strong>
+                <p style="margin: 8px 0 0 0;">Op basis van huidige trend: Q1 omzet verwacht €185.000 (+8% YoY)</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown("""
+            <div class="agent-card agent-aria">
+                <strong style="color: #14b8a6;">📄 ARIA - Facturen</strong>
+                <p style="margin: 8px 0 0 0;">4 nieuwe facturen verwerkt. 1 wacht op uw goedkeuring.</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    elif st.session_state.current_view == 'invoices':
+        st.title("📄 Factuurverwerking")
+        st.markdown(f"**{current_client['name']}** | Powered by ARIA")
+        
+        # Upload section
+        st.markdown("### 📤 Factuur Uploaden")
+        uploaded_file = st.file_uploader("Sleep een factuur hierheen of klik om te uploaden", type=['pdf', 'jpg', 'png'])
+        
+        if uploaded_file:
+            with st.spinner("🤖 ARIA analyseert de factuur..."):
+                import time
+                time.sleep(2)
+            
+            st.success("✅ Factuur succesvol geanalyseerd!")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Gedetecteerde gegevens:**")
+                st.markdown("""
+                - **Leverancier:** Bouwmaterialen Jansen B.V.
+                - **Factuurnummer:** F2024-009
+                - **Bedrag:** € 3.250,00
+                - **BTW:** € 682,50
+                - **RGS Code:** WIkworGro (Grond- en hulpstoffen)
+                """)
+            with col2:
+                st.markdown("**Vertrouwensscore:**")
+                st.progress(0.96)
+                st.markdown("96% - Hoge betrouwbaarheid")
+                
+                if st.button("✅ Goedkeuren en verwerken", type="primary"):
+                    st.success("Factuur verwerkt en geboekt!")
+        
+        st.markdown("---")
+        
+        # Invoice tabs
+        st.markdown("### 📋 Factuuroverzicht")
+        tab1, tab2, tab3 = st.tabs(["🆕 Nieuw (4)", "⏳ Review (1)", "✅ Verwerkt (3)"])
+        
+        def show_invoice_list(invoices, tab_prefix):
+            for inv in invoices:
+                col1, col2, col3, col4, col5 = st.columns([2, 3, 2, 2, 1])
+                with col1:
+                    st.markdown(f"**{inv['id']}**")
+                with col2:
+                    st.markdown(inv['supplier'])
+                with col3:
+                    st.markdown(f"€ {inv['amount']:,.2f}")
+                with col4:
+                    st.markdown(inv['date'])
+                with col5:
+                    if st.button("👁️", key=f"{tab_prefix}_view_{inv['id']}"):
+                        st.session_state.selected_invoice = inv
+                st.markdown("---")
+        
+        with tab1:
+            show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'nieuw'], "new")
+        with tab2:
+            show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'wacht op review'], "review")
+        with tab3:
+            show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'verwerkt'], "processed")
+
+    elif st.session_state.current_view == 'pnl':
+        st.title("📊 Winst & Verlies")
+        st.markdown(f"**{current_client['name']}** | Periode: Januari 2024 YTD")
+        
+        # Create P&L statement
+        st.markdown("""
+        <div class="rgs-header">
+            <span>RGS Code</span>
+            <span style="float: right;">Bedrag</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        categories = {}
+        for code, data in RGS_WV.items():
+            cat = data['category']
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append((code, data))
+        
+        total = 0
+        for category, items in categories.items():
+            st.markdown(f"**{category}**")
+            cat_total = 0
+            for code, data in items:
+                st.markdown(f"""
+                <div class="rgs-row">
+                    <span>{data['name']} <small style="color: #94a3b8;">({code})</small></span>
+                    <span style="float: right;">{format_currency(data['amount'])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+                cat_total += data['amount']
+            st.markdown(f"""
+            <div class="rgs-row" style="background: #f1f5f9; font-weight: 600;">
+                <span>Subtotaal {category}</span>
+                <span style="float: right;">{format_currency(cat_total)}</span>
+            </div>
+            """, unsafe_allow_html=True)
+            total += cat_total
+            st.markdown("")
+        
+        st.markdown(f"""
+        <div class="rgs-row rgs-total" style="background: #0f172a; color: white; border-radius: 0 0 12px 12px;">
+            <span style="font-size: 18px;">NETTO RESULTAAT</span>
+            <span style="float: right; font-size: 18px;">{format_currency(total)}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    elif st.session_state.current_view == 'balance':
+        st.title("⚖️ Balans")
+        st.markdown(f"**{current_client['name']}** | Per 31 januari 2024")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### ACTIVA")
+            st.markdown('<div class="rgs-header">Omschrijving</div>', unsafe_allow_html=True)
+            
+            total_activa = 0
+            for code, data in RGS_BALANS['activa'].items():
+                st.markdown(f"""
+                <div class="rgs-row">
+                    <span>{data['name']} <small style="color: #94a3b8;">({code})</small></span>
+                    <span style="float: right;">{format_currency(data['amount'])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+                total_activa += data['amount']
+            
+            st.markdown(f"""
+            <div class="rgs-row rgs-total" style="background: #0f172a; color: white;">
+                <span>TOTAAL ACTIVA</span>
+                <span style="float: right;">{format_currency(total_activa)}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("### PASSIVA")
+            st.markdown('<div class="rgs-header">Omschrijving</div>', unsafe_allow_html=True)
+            
+            total_passiva = 0
+            for code, data in RGS_BALANS['passiva'].items():
+                st.markdown(f"""
+                <div class="rgs-row">
+                    <span>{data['name']} <small style="color: #94a3b8;">({code})</small></span>
+                    <span style="float: right;">{format_currency(data['amount'])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+                total_passiva += data['amount']
+            
+            st.markdown(f"""
+            <div class="rgs-row rgs-total" style="background: #0f172a; color: white;">
+                <span>TOTAAL PASSIVA</span>
+                <span style="float: right;">{format_currency(total_passiva)}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+    elif st.session_state.current_view == 'agents':
+        st.title("🤖 AI Agents")
+        st.markdown(f"**{current_client['name']}** | Jouw digitale financiële team")
+        
+        for name, agent in AI_AGENTS.items():
+            st.markdown(f"""
+            <div class="agent-card agent-{name.lower()}">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <h3 style="margin: 0; color: {agent['color']};">{name}</h3>
+                        <p style="color: #64748b; font-size: 12px; margin: 4px 0;">{agent['full_name']}</p>
+                        <p style="margin: 8px 0 0 0;"><strong>{agent['role']}</strong></p>
+                        <p style="color: #64748b;">{agent['description']}</p>
+                        <p style="color: #714B67; font-size: 12px;"><span class="odoo-badge">Odoo: {agent['odoo_link']}</span></p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="status-active">{agent['status']}</span>
+                        <p style="margin: 12px 0 0 0; font-size: 24px; font-weight: 700;">{agent['processed_today']}</p>
+                        <p style="color: #64748b; font-size: 12px;">verwerkt vandaag</p>
+                        <p style="color: #10b981; font-weight: 500;">{agent['accuracy']}% nauwkeurig</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    elif st.session_state.current_view == 'chat':
+        st.title("💬 Chat met ALEX")
+        st.markdown(f"**{current_client['name']}** | Uw persoonlijke financieel adviseur")
+        
+        # Chat interface
+        chat_container = st.container()
+        
+        # Welcome message
+        with chat_container:
+            st.markdown("""
+            <div style="background: #f1f5f9; padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+                <strong style="color: #ec4899;">🤖 ALEX</strong>
+                <p style="margin: 8px 0 0 0;">Goedemiddag! Ik ben ALEX, uw AI-adviseur. Ik kan u helpen met vragen over uw financiën, facturen, belastingen en meer. Wat kan ik voor u doen?</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Show chat history
+            for msg in st.session_state.chat_history:
+                if msg['role'] == 'user':
+                    st.markdown(f"""
+                    <div style="background: #14b8a6; color: white; padding: 16px; border-radius: 12px; margin: 8px 0; margin-left: 20%;">
+                        <p style="margin: 0;">{msg['content']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style="background: #f1f5f9; padding: 16px; border-radius: 12px; margin: 8px 0; margin-right: 20%;">
+                        <strong style="color: #ec4899;">🤖 ALEX</strong>
+                        <p style="margin: 8px 0 0 0;">{msg['content']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        # Input
+        user_input = st.chat_input("Stel een vraag...")
+        
+        if user_input:
+            st.session_state.chat_history.append({"role": "user", "content": user_input})
+            
+            # Simulated responses
+            responses = {
+                "btw": "Op basis van uw huidige administratie is uw BTW-positie voor Q1 2024: € 45.000 te betalen. De deadline voor de aangifte is 28 februari. Wilt u dat ik de conceptaangifte voor u genereer?",
+                "factuur": "Er staan momenteel 4 nieuwe facturen klaar voor verwerking. De grootste is van Houthandel Rotterdam (€ 6.420). Wilt u dat ik deze facturen automatisch laat verwerken door ARIA?",
+                "winst": f"Uw netto resultaat YTD is {format_currency(current_client['winst_ytd'])}. Dit is een verbetering van 12% ten opzichte van dezelfde periode vorig jaar. De belangrijkste drivers zijn hogere omzet en betere kostbeheersing.",
+                "default": "Ik begrijp uw vraag. Laat me even kijken in uw gegevens... Op basis van uw financiële situatie kan ik u het volgende adviseren. Wilt u meer specifieke informatie over een bepaald onderwerp?"
+            }
+            
+            # Simple keyword matching for demo
+            response = responses['default']
+            lower_input = user_input.lower()
+            if 'btw' in lower_input:
+                response = responses['btw']
+            elif 'factuur' in lower_input or 'facturen' in lower_input:
+                response = responses['factuur']
+            elif 'winst' in lower_input or 'resultaat' in lower_input:
+                response = responses['winst']
+            
+            st.session_state.chat_history.append({"role": "assistant", "content": response})
             st.rerun()
 
-elif st.session_state.current_view == 'forecast':
-    st.title("📈 Forecasting & Scenario's")
-    st.markdown("Powered by **LUNA** - Lookout & Understanding for Numerical Analysis")
-    st.markdown('<span class="odoo-badge">INCL. CRM PIPELINE DATA</span>', unsafe_allow_html=True)
-    
-    # Pipeline to Cashflow
-    st.subheader("🔮 Pipeline → Cashflow Prognose")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("### CRM Pipeline Analyse")
-        pipeline_df = pd.DataFrame([
-            {"Fase": "Kwalificatie", "Deals": 2, "Waarde": "€ 630.000", "Kans": "25%", "Gewogen": "€ 157.500"},
-            {"Fase": "Voorstel", "Deals": 2, "Waarde": "€ 220.000", "Kans": "55%", "Gewogen": "€ 121.000"},
-            {"Fase": "Onderhandeling", "Deals": 2, "Waarde": "€ 353.000", "Kans": "77%", "Gewogen": "€ 271.810"},
-        ])
-        st.dataframe(pipeline_df, hide_index=True, use_container_width=True)
+    elif st.session_state.current_view == 'forecast':
+        st.title("📈 Forecasting & Scenario's")
+        st.markdown(f"**{current_client['name']}** | Powered by LUNA")
         
-        st.metric("Totale gewogen pipeline", "€ 550.310")
-    
-    with col2:
-        st.markdown("### Verwachte inkomsten per kwartaal")
+        # Forecast chart
+        st.markdown("### 📊 Omzet Prognose")
         
-        quarters = ['Q1 2024', 'Q2 2024', 'Q3 2024']
-        expected = [146000, 280000, 125000]
+        months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+        actual = [45000, 52000, 48000, None, None, None, None, None, None, None, None, None]
+        forecast = [45000, 52000, 48000, 55000, 58000, 62000, 65000, 63000, 68000, 72000, 70000, 75000]
+        optimistic = [45000, 52000, 48000, 58000, 63000, 68000, 72000, 70000, 76000, 82000, 80000, 88000]
+        pessimistic = [45000, 52000, 48000, 52000, 53000, 55000, 56000, 54000, 58000, 60000, 58000, 62000]
         
-        fig = go.Figure(data=[go.Bar(x=quarters, y=expected, marker_color=['#10b981', '#14b8a6', '#64748b'])])
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=months, y=actual, name='Actueel', line=dict(color='#0f172a', width=3)))
+        fig.add_trace(go.Scatter(x=months, y=forecast, name='Forecast', line=dict(color='#14b8a6', width=2, dash='dash')))
+        fig.add_trace(go.Scatter(x=months, y=optimistic, name='Optimistisch', line=dict(color='#10b981', width=1, dash='dot')))
+        fig.add_trace(go.Scatter(x=months, y=pessimistic, name='Pessimistisch', line=dict(color='#ef4444', width=1, dash='dot')))
+        
         fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            height=250
+            xaxis_title="", yaxis_title="Omzet (€)",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+            margin=dict(t=40, b=20),
+            height=350
         )
         st.plotly_chart(fig, use_container_width=True)
-    
-    st.info("""
-    💡 **LUNA Insight:** Op basis van je Odoo CRM pipeline en historische conversiedata verwacht ik 
-    **€ 146.000** extra omzet in Q1 2024. De deal 'Nieuwbouw Villa Wassenaar' heeft de hoogste 
-    impact op je cashflow. Bij sluiting ontvang je naar verwachting de eerste termijn (30%) = **€ 85.500**.
-    """)
-    
-    st.markdown("---")
-    
-    # Forecast chart
-    st.subheader("📊 Omzetprognose komende 6 maanden")
-    
-    months = ['Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul']
-    actual = [97500, None, None, None, None, None]
-    forecast = [97500, 102000, 98000, 115000, 108000, 95000]
-    lower = [97500, 95000, 88000, 100000, 92000, 78000]
-    upper = [97500, 109000, 108000, 130000, 124000, 112000]
-    
-    fig = go.Figure()
-    
-    # Confidence interval
-    fig.add_trace(go.Scatter(
-        x=months + months[::-1],
-        y=upper + lower[::-1],
-        fill='toself',
-        fillcolor='rgba(20, 184, 166, 0.2)',
-        line=dict(color='rgba(255,255,255,0)'),
-        name='Betrouwbaarheidsinterval'
-    ))
-    
-    # Forecast line
-    fig.add_trace(go.Scatter(
-        x=months, y=forecast,
-        mode='lines+markers',
-        name='Prognose',
-        line=dict(color='#14b8a6', width=3),
-        marker=dict(size=8)
-    ))
-    
-    fig.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        height=400,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02)
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Scenario analysis
-    st.markdown("---")
-    st.subheader("🎭 Scenario Analyse")
-    
-    scenario = st.selectbox("Kies een scenario:", [
-        "Basis scenario",
-        "Groei scenario (+20% omzet)",
-        "Krimp scenario (-15% omzet)",
-        "Nieuwe klant scenario"
-    ])
-    
-    col1, col2, col3 = st.columns(3)
-    
-    if scenario == "Basis scenario":
+        
+        # Scenario cards
+        st.markdown("### 🎯 Scenario Analyse")
+        col1, col2, col3 = st.columns(3)
+        
         with col1:
-            st.metric("Verwachte omzet (12m)", "€ 1.250.000")
+            st.markdown("""
+            <div class="metric-card" style="border-left: 4px solid #10b981;">
+                <h4 style="color: #10b981;">Optimistisch</h4>
+                <p class="metric-value">€ 788.000</p>
+                <p class="metric-label">Jaaromzet prognose</p>
+                <p style="color: #10b981;">+28% vs. vorig jaar</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
         with col2:
-            st.metric("Verwacht resultaat", "€ 95.000")
+            st.markdown("""
+            <div class="metric-card" style="border-left: 4px solid #14b8a6;">
+                <h4 style="color: #14b8a6;">Basis</h4>
+                <p class="metric-value">€ 713.000</p>
+                <p class="metric-label">Jaaromzet prognose</p>
+                <p style="color: #14b8a6;">+16% vs. vorig jaar</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
         with col3:
-            st.metric("Liquiditeit einde jaar", "€ 180.000")
-    elif scenario == "Groei scenario (+20% omzet)":
+            st.markdown("""
+            <div class="metric-card" style="border-left: 4px solid #ef4444;">
+                <h4 style="color: #ef4444;">Pessimistisch</h4>
+                <p class="metric-value">€ 638.000</p>
+                <p class="metric-label">Jaaromzet prognose</p>
+                <p style="color: #64748b;">+4% vs. vorig jaar</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    elif st.session_state.current_view == 'crm':
+        st.title("🎯 CRM Pipeline")
+        st.markdown(f"**{current_client['name']}** | Odoo CRM Integratie")
+        
+        # Pipeline funnel
+        st.markdown("### 📊 Pipeline Funnel")
+        
+        stages = ['Lead', 'Kwalificatie', 'Voorstel', 'Onderhandeling', 'Gewonnen']
+        stage_values = []
+        for stage in stages:
+            total = sum(d['amount'] for d in ODOO_CRM_PIPELINE if d['stage'] == stage)
+            stage_values.append(total)
+        
+        fig = go.Figure(go.Funnel(
+            y=stages,
+            x=stage_values,
+            textinfo="value+percent initial",
+            texttemplate="€%{value:,.0f}<br>%{percentInitial:.0%}",
+            marker=dict(color=['#f1f5f9', '#f3e8ff', '#dbeafe', '#fef3c7', '#dcfce7'])
+        ))
+        fig.update_layout(margin=dict(t=20, b=20), height=300)
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # LUNA insight
+        weighted_value = sum(d['amount'] * d['probability'] / 100 for d in ODOO_CRM_PIPELINE)
+        st.markdown(f"""
+        <div class="agent-card agent-luna">
+            <strong style="color: #3b82f6;">🔮 LUNA Pipeline Analyse</strong>
+            <p style="margin: 8px 0 0 0;">Gewogen pipeline waarde: <strong>{format_currency(weighted_value)}</strong></p>
+            <p>Top prioriteit: <strong>Nieuwbouw Villa Wassenaar</strong> - 75% kans, sluit naar verwachting 15 februari</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Deal list
+        st.markdown("### 📋 Actieve Deals")
+        for deal in ODOO_CRM_PIPELINE:
+            stage_colors = {
+                'Lead': '#f1f5f9', 'Kwalificatie': '#f3e8ff', 
+                'Voorstel': '#dbeafe', 'Onderhandeling': '#fef3c7', 'Gewonnen': '#dcfce7'
+            }
+            st.markdown(f"""
+            <div class="invoice-row">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{deal['name']}</strong>
+                        <p style="color: #64748b; margin: 4px 0;">{deal['client']} | {deal['contact']}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="background: {stage_colors[deal['stage']]}; padding: 4px 12px; border-radius: 20px; font-size: 12px;">{deal['stage']}</span>
+                        <p style="font-size: 20px; font-weight: 700; margin: 8px 0 0 0;">{format_currency(deal['amount'])}</p>
+                        <p style="color: #64748b; font-size: 12px;">{deal['probability']}% kans</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    elif st.session_state.current_view == 'purchase':
+        st.title("📦 Inkoop & Purchase Orders")
+        st.markdown(f"**{current_client['name']}** | Odoo Purchase Integratie")
+        
+        # 3-way matching overview
+        st.markdown("### ✅ 3-Way Matching Status")
+        
+        col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Verwachte omzet (12m)", "€ 1.500.000", delta="+20%")
+            st.metric("Volledig gematcht", "3", "")
         with col2:
-            st.metric("Verwacht resultaat", "€ 145.000", delta="+52%")
+            st.metric("Wacht op levering", "1", "")
         with col3:
-            st.metric("Liquiditeit einde jaar", "€ 220.000", delta="+22%")
-        st.info("💡 LUNA advies: Bij dit groeiscenario is extra werkkapitaal nodig. Overweeg een kredietfaciliteit van €50.000.")
-    elif scenario == "Krimp scenario (-15% omzet)":
+            st.metric("In bestelling", "1", "")
+        
+        st.markdown("---")
+        
+        # PO List
+        st.markdown("### 📋 Purchase Orders")
+        for po in ODOO_PURCHASE_ORDERS:
+            status_colors = {'Geleverd': '#dcfce7', 'Gepland': '#fef3c7', 'Besteld': '#dbeafe'}
+            st.markdown(f"""
+            <div class="invoice-row">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{po['id']}</strong>
+                        <p style="color: #64748b; margin: 4px 0;">{po['supplier']}</p>
+                        <p style="color: #94a3b8; font-size: 12px;">Project: {po['project']}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="background: {status_colors[po['status']]}; padding: 4px 12px; border-radius: 20px; font-size: 12px;">{po['status']}</span>
+                        <p style="font-size: 18px; font-weight: 700; margin: 8px 0 0 0;">{format_currency(po['amount'])}</p>
+                        <p style="color: #64748b; font-size: 12px;">{po['date']}</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    elif st.session_state.current_view == 'hr':
+        st.title("👥 HR & Personeel")
+        st.markdown(f"**{current_client['name']}** | Odoo HR Integratie")
+        
+        # HR Overview
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Verwachte omzet (12m)", "€ 1.062.500", delta="-15%")
+            st.metric("Medewerkers", len(ODOO_HR['employees']))
         with col2:
-            st.metric("Verwacht resultaat", "€ 35.000", delta="-63%")
+            st.metric("FTE", ODOO_HR['total_fte'])
         with col3:
-            st.metric("Liquiditeit einde jaar", "€ 95.000", delta="-47%")
-        st.warning("⚠️ LUNA waarschuwing: In dit scenario daalt de liquiditeit onder het gewenste minimum. Kostenreductie van 10% wordt aanbevolen.")
-    else:
-        with col1:
-            st.metric("Verwachte omzet (12m)", "€ 1.400.000", delta="+12%")
-        with col2:
-            st.metric("Verwacht resultaat", "€ 125.000", delta="+32%")
-        with col3:
-            st.metric("Liquiditeit einde jaar", "€ 165.000", delta="-8%")
-        st.success("✅ LUNA analyse: Nieuwe klant verhoogt omzet maar vereist initiële investering. Break-even na 4 maanden.")
+            st.metric("Loonkosten/maand", format_currency(ODOO_HR['total_salary_costs']))
+        with col4:
+            wkr_pct = (ODOO_HR['wkr_used'] / ODOO_HR['wkr_budget']) * 100
+            st.metric("WKR Benut", f"{wkr_pct:.0f}%")
+        
+        # SAGE insight
+        st.markdown(f"""
+        <div class="agent-card agent-sage">
+            <strong style="color: #f59e0b;">💡 SAGE - WKR Advies</strong>
+            <p style="margin: 8px 0 0 0;">WKR Budget: {format_currency(ODOO_HR['wkr_budget'])} | Benut: {format_currency(ODOO_HR['wkr_used'])} | Ruimte: {format_currency(ODOO_HR['wkr_budget'] - ODOO_HR['wkr_used'])}</p>
+            <p style="color: #64748b;">Tip: Overweeg kerstpakketten of een personeelsuitje om het resterende budget optimaal te benutten.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Employee list
+        st.markdown("### 👥 Personeelsoverzicht")
+        for emp in ODOO_HR['employees']:
+            col1, col2, col3 = st.columns([3, 2, 1])
+            with col1:
+                st.markdown(f"**{emp['name']}**")
+                st.markdown(f"<small style='color: #64748b;'>{emp['role']}</small>", unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"{format_currency(emp['salary'])}/maand")
+            with col3:
+                st.markdown(f"{emp['fte']} FTE")
+            st.markdown("---")
 
 # Footer
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #64748b; font-size: 12px; padding: 20px;">
-    <p><strong>NOVA Platform</strong> - Demo versie | <span class="odoo-badge">ODOO CONNECTED</span></p>
-    <p>De toekomst van accounting, vandaag.</p>
+<div style="text-align: center; color: #94a3b8; font-size: 12px;">
+    NOVA Platform Demo | Conceptueel ontwerp voor het accountantskantoor van de toekomst<br>
+    Inclusief Odoo ERP integratie voor end-to-end business operations
 </div>
 """, unsafe_allow_html=True)
