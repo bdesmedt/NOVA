@@ -206,7 +206,7 @@ if 'selected_deal' not in st.session_state:
 # ============================================
 
 FIRM_INFO = {
-    "name": "Van der Berg & Partners Accountants",
+    "name": "NOVA Partners",
     "location": "Amsterdam",
     "employees": 12,
     "clients": 45
@@ -505,6 +505,48 @@ RGS_BALANS = {
     }
 }
 
+# BTW/ICP Data
+BTW_DATA = {
+    "periodes": [
+        {"periode": "Q4 2024", "status": "Open", "deadline": "2025-01-31", "btw_verschuldigd": 45000, "btw_voorbelasting": 28750, "btw_af_te_dragen": 16250, "icp_leveringen": 12500, "icp_verwervingen": 8200},
+        {"periode": "Q3 2024", "status": "Ingediend", "deadline": "2024-10-31", "btw_verschuldigd": 52000, "btw_voorbelasting": 31200, "btw_af_te_dragen": 20800, "icp_leveringen": 15800, "icp_verwervingen": 6500},
+        {"periode": "Q2 2024", "status": "Betaald", "deadline": "2024-07-31", "btw_verschuldigd": 48500, "btw_voorbelasting": 29100, "btw_af_te_dragen": 19400, "icp_leveringen": 9200, "icp_verwervingen": 11000},
+        {"periode": "Q1 2024", "status": "Betaald", "deadline": "2024-04-30", "btw_verschuldigd": 41200, "btw_voorbelasting": 24720, "btw_af_te_dragen": 16480, "icp_leveringen": 7500, "icp_verwervingen": 5800},
+    ],
+    "icp_relaties": [
+        {"land": "🇩🇪 Duitsland", "btw_nr": "DE123456789", "bedrijf": "Bauhaus GmbH", "leveringen": 8500, "verwervingen": 4200},
+        {"land": "🇧🇪 België", "btw_nr": "BE0123456789", "bedrijf": "Bouwmaterialen BVBA", "leveringen": 3000, "verwervingen": 2500},
+        {"land": "🇫🇷 Frankrijk", "btw_nr": "FR12345678901", "bedrijf": "Construction SARL", "leveringen": 1000, "verwervingen": 1500},
+    ]
+}
+
+# Vennootschapsbelasting Data
+VPB_DATA = {
+    "boekjaar": "2024",
+    "fiscale_winst": 89400,
+    "tarieven": {
+        "schijf_1": {"grens": 200000, "percentage": 19},
+        "schijf_2": {"grens": None, "percentage": 25.8}
+    },
+    "berekening": {
+        "winst_voor_vpb": 89400,
+        "kleinschaligheidsinvesteringsaftrek": 5200,
+        "overige_fiscale_correcties": -2100,
+        "belastbare_winst": 82100,
+        "vpb_schijf_1": 15599,  # 82100 * 19%
+        "vpb_totaal": 15599
+    },
+    "voorlopige_aanslagen": [
+        {"jaar": "2024", "bedrag": 14000, "status": "Betaald", "betaaldatum": "2024-06-15"},
+        {"jaar": "2024", "bedrag": 14000, "status": "Open", "betaaldatum": "2025-02-28"},
+    ],
+    "deadlines": [
+        {"omschrijving": "Aangifte Vpb 2024", "deadline": "2025-06-01", "status": "Nog in te dienen"},
+        {"omschrijving": "Betaling voorlopige aanslag 2024", "deadline": "2025-02-28", "status": "Open"},
+        {"omschrijving": "Definitieve aanslag 2023", "deadline": "Ontvangen", "status": "Akkoord"},
+    ]
+}
+
 # ============================================
 # HELPER FUNCTIONS
 # ============================================
@@ -642,6 +684,19 @@ with st.sidebar:
         
         for label, view in odoo_options.items():
             if st.button(label, key=f"onav_{view}", use_container_width=True):
+                st.session_state.current_view = view
+        
+        # Fiscaal section
+        st.markdown("---")
+        st.markdown("**📋 FISCAAL**")
+        
+        fiscaal_options = {
+            "🧾 BTW & ICP": "btw",
+            "🏛️ Vennootschapsbelasting": "vpb",
+        }
+        
+        for label, view in fiscaal_options.items():
+            if st.button(label, key=f"fnav_{view}", use_container_width=True):
                 st.session_state.current_view = view
 
 # ============================================
@@ -1485,6 +1540,249 @@ else:  # portal_mode == 'klant'
             with col3:
                 st.markdown(f"{emp['fte']} FTE")
             st.markdown("---")
+
+    elif st.session_state.current_view == 'btw':
+        st.title("🧾 BTW & ICP Aangifte")
+        st.markdown(f"**{current_client['name']}** | Omzetbelasting & Intracommunautaire Prestaties")
+        
+        # Deadline alert
+        days_until_deadline = 5  # Demo: Q4 deadline nadert
+        if days_until_deadline <= 7:
+            st.markdown(f"""
+            <div class="alert-card">
+                <strong>⚠️ BTW Deadline Alert</strong><br>
+                <span>Q4 2024 aangifte dient uiterlijk <strong>31 januari 2025</strong> ingediend te worden ({days_until_deadline} dagen)</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Current period overview
+        st.markdown("### 📊 Huidig Kwartaal (Q4 2024)")
+        current_btw = BTW_DATA["periodes"][0]
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("BTW Verschuldigd", format_currency(current_btw["btw_verschuldigd"]))
+        with col2:
+            st.metric("BTW Voorbelasting", format_currency(current_btw["btw_voorbelasting"]))
+        with col3:
+            st.metric("Af te dragen", format_currency(current_btw["btw_af_te_dragen"]), 
+                     delta=f"-{format_currency(current_btw['btw_voorbelasting'])}", delta_color="off")
+        with col4:
+            st.metric("Status", current_btw["status"])
+        
+        # SAGE insight
+        st.markdown(f"""
+        <div class="agent-card agent-sage">
+            <strong style="color: #f59e0b;">💡 SAGE - BTW Analyse</strong>
+            <p style="margin: 8px 0 0 0;">De voorbelasting ratio is <strong>{(current_btw['btw_voorbelasting']/current_btw['btw_verschuldigd']*100):.1f}%</strong> - dit ligt binnen normale marges voor de bouwsector.</p>
+            <p style="color: #64748b;">Let op: ICP-leveringen naar Duitsland (€8.500) vereisen correcte vermelding in de ICP-opgave.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # BTW History
+        st.markdown("### 📅 BTW Overzicht per Periode")
+        btw_df = pd.DataFrame(BTW_DATA["periodes"])
+        btw_df["btw_verschuldigd"] = btw_df["btw_verschuldigd"].apply(format_currency)
+        btw_df["btw_voorbelasting"] = btw_df["btw_voorbelasting"].apply(format_currency)
+        btw_df["btw_af_te_dragen"] = btw_df["btw_af_te_dragen"].apply(format_currency)
+        btw_df.columns = ["Periode", "Status", "Deadline", "Verschuldigd", "Voorbelasting", "Af te dragen", "ICP Lev.", "ICP Verw."]
+        st.dataframe(btw_df, use_container_width=True, hide_index=True)
+        
+        st.markdown("---")
+        
+        # ICP Overview
+        st.markdown("### 🇪🇺 ICP-Opgave (Intracommunautaire Prestaties)")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**ICP Leveringen (verkopen naar EU)**")
+            for rel in BTW_DATA["icp_relaties"]:
+                st.markdown(f"""
+                <div class="invoice-row">
+                    <div style="display: flex; justify-content: space-between;">
+                        <div>
+                            <strong>{rel['land']}</strong><br>
+                            <span style="color: #64748b;">{rel['bedrijf']}</span><br>
+                            <small style="color: #94a3b8;">{rel['btw_nr']}</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 18px; font-weight: 700;">{format_currency(rel['leveringen'])}</span>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("**ICP Verwervingen (inkopen uit EU)**")
+            for rel in BTW_DATA["icp_relaties"]:
+                st.markdown(f"""
+                <div class="invoice-row">
+                    <div style="display: flex; justify-content: space-between;">
+                        <div>
+                            <strong>{rel['land']}</strong><br>
+                            <span style="color: #64748b;">{rel['bedrijf']}</span><br>
+                            <small style="color: #94a3b8;">{rel['btw_nr']}</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 18px; font-weight: 700;">{format_currency(rel['verwervingen'])}</span>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # Action buttons
+        st.markdown("---")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("📤 Concept aangifte genereren", key="btw_concept", use_container_width=True):
+                st.success("✅ Concept BTW-aangifte Q4 2024 gegenereerd")
+        with col2:
+            if st.button("📋 ICP-opgave voorbereiden", key="icp_prepare", use_container_width=True):
+                st.success("✅ ICP-opgave Q4 2024 voorbereid")
+        with col3:
+            if st.button("📧 Ter goedkeuring naar klant", key="btw_approve", use_container_width=True):
+                st.info("📧 E-mail verzonden naar Jan Vermeer")
+
+    elif st.session_state.current_view == 'vpb':
+        st.title("🏛️ Vennootschapsbelasting")
+        st.markdown(f"**{current_client['name']}** | Vpb {VPB_DATA['boekjaar']}")
+        
+        # Deadline overview
+        st.markdown("### 📅 Deadlines & Status")
+        for dl in VPB_DATA["deadlines"]:
+            status_color = "#dcfce7" if dl["status"] == "Akkoord" or dl["status"] == "Betaald" else "#fef3c7" if dl["status"] == "Open" else "#fee2e2"
+            st.markdown(f"""
+            <div class="invoice-row">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{dl['omschrijving']}</strong>
+                        <p style="color: #64748b; margin: 4px 0;">Deadline: {dl['deadline']}</p>
+                    </div>
+                    <span style="background: {status_color}; padding: 4px 12px; border-radius: 20px; font-size: 12px;">{dl['status']}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Vpb Calculation
+        st.markdown("### 🧮 Vpb Berekening 2024 (Voorlopig)")
+        
+        calc = VPB_DATA["berekening"]
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px 0;"><strong>Commerciële winst voor belasting</strong></td>
+                        <td style="text-align: right; padding: 12px 0;">{format_currency(calc['winst_voor_vpb'])}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px 0; color: #10b981;">Kleinschaligheidsinvesteringsaftrek (KIA)</td>
+                        <td style="text-align: right; padding: 12px 0; color: #10b981;">- {format_currency(calc['kleinschaligheidsinvesteringsaftrek'])}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px 0; color: #ef4444;">Overige fiscale correcties</td>
+                        <td style="text-align: right; padding: 12px 0; color: #ef4444;">+ {format_currency(abs(calc['overige_fiscale_correcties']))}</td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                        <td style="padding: 12px 0;"><strong>Belastbare winst</strong></td>
+                        <td style="text-align: right; padding: 12px 0;"><strong>{format_currency(calc['belastbare_winst'])}</strong></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px 0;">Vpb 19% (tot €200.000)</td>
+                        <td style="text-align: right; padding: 12px 0;">{format_currency(calc['vpb_schijf_1'])}</td>
+                    </tr>
+                    <tr style="background: #0f172a; color: white;">
+                        <td style="padding: 12px 0;"><strong>Totaal verschuldigde Vpb</strong></td>
+                        <td style="text-align: right; padding: 12px 0;"><strong>{format_currency(calc['vpb_totaal'])}</strong></td>
+                    </tr>
+                </table>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            # Effective tax rate
+            effective_rate = (calc['vpb_totaal'] / calc['winst_voor_vpb']) * 100
+            st.markdown(f"""
+            <div class="metric-card" style="text-align: center;">
+                <p class="metric-label">Effectieve belastingdruk</p>
+                <p class="metric-value">{effective_rate:.1f}%</p>
+                <p style="color: #64748b; font-size: 12px;">Nominaal tarief: 19%</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Tarieven info
+            st.markdown(f"""
+            <div class="metric-card">
+                <p class="metric-label">Vpb Tarieven 2024</p>
+                <p><strong>19%</strong> tot €200.000</p>
+                <p><strong>25,8%</strong> boven €200.000</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # SAGE insight
+        st.markdown(f"""
+        <div class="agent-card agent-sage">
+            <strong style="color: #f59e0b;">💡 SAGE - Fiscaal Advies</strong>
+            <p style="margin: 8px 0 0 0;">De KIA-aftrek van €5.200 is correct toegepast op basis van de investeringen in 2024.</p>
+            <p style="color: #64748b;">Overweeg om vóór jaareinde nog investeringen te doen - de drempel voor KIA (€2.800) is al bereikt, extra aftrek mogelijk tot €19.500 bij investeringen tot €387.580.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Voorlopige aanslagen
+        st.markdown("### 💳 Voorlopige Aanslagen")
+        
+        col1, col2, col3 = st.columns(3)
+        total_va = sum(va['bedrag'] for va in VPB_DATA['voorlopige_aanslagen'])
+        paid_va = sum(va['bedrag'] for va in VPB_DATA['voorlopige_aanslagen'] if va['status'] == 'Betaald')
+        
+        with col1:
+            st.metric("Totaal voorlopige aanslagen", format_currency(total_va))
+        with col2:
+            st.metric("Reeds betaald", format_currency(paid_va))
+        with col3:
+            expected_return = total_va - calc['vpb_totaal']
+            if expected_return > 0:
+                st.metric("Verwachte teruggave", format_currency(expected_return), delta="terug te ontvangen")
+            else:
+                st.metric("Nog te betalen", format_currency(abs(expected_return)), delta="bij te betalen", delta_color="inverse")
+        
+        for va in VPB_DATA['voorlopige_aanslagen']:
+            status_color = "#dcfce7" if va["status"] == "Betaald" else "#fef3c7"
+            st.markdown(f"""
+            <div class="invoice-row">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>Voorlopige aanslag {va['jaar']}</strong>
+                        <p style="color: #64748b; margin: 4px 0;">Vervaldatum: {va['betaaldatum']}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="background: {status_color}; padding: 4px 12px; border-radius: 20px; font-size: 12px;">{va['status']}</span>
+                        <p style="font-size: 18px; font-weight: 700; margin: 8px 0 0 0;">{format_currency(va['bedrag'])}</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Action buttons
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📊 Vpb Prognose updaten", key="vpb_prognose", use_container_width=True):
+                st.success("✅ Vpb prognose 2024 geüpdatet")
+        with col2:
+            if st.button("📧 Fiscaal rapport naar klant", key="vpb_report", use_container_width=True):
+                st.info("📧 Rapport verzonden naar Jan Vermeer")
 
 # Footer
 st.markdown("---")
