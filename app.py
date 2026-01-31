@@ -520,6 +520,86 @@ BTW_DATA = {
     ]
 }
 
+# Odoo Boekhouding Sync Data
+ODOO_SYNC_STATUS = {
+    "modules": [
+        {"naam": "Bankrekeningen", "status": "warning", "laatste_sync": "2 uur geleden", "details": "ING synchronisatie mislukt", "items_pending": 3},
+        {"naam": "Verkoopfacturen", "status": "ok", "laatste_sync": "15 min geleden", "details": "Volledig gesynchroniseerd", "items_pending": 0},
+        {"naam": "Inkoopfacturen", "status": "ok", "laatste_sync": "15 min geleden", "details": "Volledig gesynchroniseerd", "items_pending": 0},
+        {"naam": "Grootboek", "status": "ok", "laatste_sync": "15 min geleden", "details": "Alle mutaties verwerkt", "items_pending": 0},
+        {"naam": "BTW Module", "status": "ok", "laatste_sync": "1 dag geleden", "details": "Q4 aangifte in voorbereiding", "items_pending": 1},
+        {"naam": "Salarisadministratie", "status": "ok", "laatste_sync": "3 dagen geleden", "details": "December loonrun verwerkt", "items_pending": 0},
+    ],
+    "ai_booking_stats": {
+        "totaal_mutaties": 1247,
+        "automatisch_geboekt": 1089,
+        "handmatig_nodig": 158,
+        "success_rate": 87.3
+    }
+}
+
+# Openstaande bankmutaties (AI kon niet boeken)
+OPEN_BANK_MUTATIONS = [
+    {"id": "BM-001", "datum": "2025-01-28", "bank": "ING", "bedrag": 2450.00, "omschrijving": "SEPA OVERBOEKING - Ref: INV-2024-0892", "reden": "Geen matchende factuur gevonden", "suggestie": "Mogelijk betaling klant Janssen BV (factuur ontbreekt)"},
+    {"id": "BM-002", "datum": "2025-01-27", "bank": "ING", "bedrag": -875.50, "omschrijving": "IDEAL BETALING - Webshop Order #4521", "reden": "Onbekende grootboekrekening", "suggestie": "Boeken op 8400 - Kantoorkosten?"},
+    {"id": "BM-003", "datum": "2025-01-26", "bank": "ABN AMRO", "bedrag": -15000.00, "omschrijving": "Aflossing lening ABN", "reden": "Lening niet gekoppeld in Odoo", "suggestie": "Koppel lening #LN-2022-001 in Odoo"},
+    {"id": "BM-004", "datum": "2025-01-25", "bank": "ING", "bedrag": 125.00, "omschrijving": "Terugboeking PIN transactie", "reden": "Oorspronkelijke transactie niet gevonden", "suggestie": "Handmatig onderzoeken"},
+    {"id": "BM-005", "datum": "2025-01-24", "bank": "ING", "bedrag": -3200.00, "omschrijving": "Automatische incasso Belastingdienst", "reden": "Meerdere belastingsoorten mogelijk", "suggestie": "BTW of Loonheffing? Check beschikking"},
+]
+
+# Investeringen & Financiering Data
+INVESTERINGEN_DATA = {
+    "activa": [
+        {"categorie": "Terreinen", "rgs": "BIvaMatTer", "aanschaf": 125000, "afschrijving_cum": 0, "boekwaarde": 125000, "methode": "Geen (grond)", "restwaarde": 125000, "levensduur": None},
+        {"categorie": "Bedrijfsgebouwen", "rgs": "BIvaMatBeg", "aanschaf": 450000, "afschrijving_cum": 165000, "boekwaarde": 285000, "methode": "Lineair", "restwaarde": 100000, "levensduur": 30},
+        {"categorie": "Machines & installaties", "rgs": "BIvaMatMae", "aanschaf": 180000, "afschrijving_cum": 85000, "boekwaarde": 95000, "methode": "Lineair", "restwaarde": 10000, "levensduur": 10},
+        {"categorie": "Transportmiddelen", "rgs": "BIvaMatTrm", "aanschaf": 125000, "afschrijving_cum": 57000, "boekwaarde": 68000, "methode": "Lineair", "restwaarde": 15000, "levensduur": 5},
+        {"categorie": "Inventaris", "rgs": "BIvaMatInv", "aanschaf": 45000, "afschrijving_cum": 32000, "boekwaarde": 13000, "methode": "Lineair", "restwaarde": 0, "levensduur": 5},
+        {"categorie": "ICT Hardware", "rgs": "BIvaMatIct", "aanschaf": 28000, "afschrijving_cum": 19000, "boekwaarde": 9000, "methode": "Lineair", "restwaarde": 0, "levensduur": 3},
+    ],
+    "afschrijvingen_jaar": [
+        {"categorie": "Bedrijfsgebouwen", "2022": 11667, "2023": 11667, "2024": 11667, "2025_budget": 11667},
+        {"categorie": "Machines & installaties", "2022": 17000, "2023": 17000, "2024": 17000, "2025_budget": 17000},
+        {"categorie": "Transportmiddelen", "2022": 22000, "2023": 22000, "2024": 22000, "2025_budget": 22000},
+        {"categorie": "Inventaris", "2022": 9000, "2023": 9000, "2024": 9000, "2025_budget": 5000},
+        {"categorie": "ICT Hardware", "2022": 9333, "2023": 9333, "2024": 9333, "2025_budget": 0},
+    ],
+    "geplande_investeringen": [
+        {"omschrijving": "Nieuwe bedrijfswagen", "bedrag": 45000, "datum": "Q2 2025", "status": "Goedgekeurd"},
+        {"omschrijving": "Server upgrade", "bedrag": 12000, "datum": "Q1 2025", "status": "In bestelling"},
+        {"omschrijving": "Productielijn uitbreiding", "bedrag": 85000, "datum": "Q3 2025", "status": "In overweging"},
+    ]
+}
+
+FINANCIERING_DATA = {
+    "leningen_ontvangen": [
+        {"id": "LN-2022-001", "verstrekker": "ABN AMRO Bank", "type": "Hypothecaire lening", "hoofdsom": 350000, "openstaand": 280000, "rente": 3.2, "aflossing_maand": 2500, "einddatum": "2037-06-01", "onderpand": "Bedrijfspand"},
+        {"id": "LN-2023-001", "verstrekker": "Rabobank", "type": "Bedrijfskrediet", "hoofdsom": 75000, "openstaand": 52000, "rente": 4.8, "aflossing_maand": 1800, "einddatum": "2026-12-01", "onderpand": "Geen"},
+        {"id": "LN-2024-001", "verstrekker": "Qredits", "type": "Investeringskrediet", "hoofdsom": 25000, "openstaand": 22500, "rente": 5.5, "aflossing_maand": 850, "einddatum": "2027-03-01", "onderpand": "Geen"},
+    ],
+    "leningen_verstrekt": [
+        {"id": "LV-2023-001", "debiteur": "Dochter BV", "type": "Rekening-courant", "hoofdsom": 50000, "openstaand": 35000, "rente": 2.0, "aflossing_maand": 1500, "einddatum": "2025-12-01"},
+    ],
+    "kredietfaciliteiten": [
+        {"bank": "ING", "type": "Rekening-courant krediet", "limiet": 100000, "benut": 15000, "beschikbaar": 85000},
+        {"bank": "ABN AMRO", "type": "Garantiekrediet", "limiet": 50000, "benut": 12000, "beschikbaar": 38000},
+    ],
+    "aflossingsschema_2025": [
+        {"maand": "Jan", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Feb", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Mar", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Apr", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Mei", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Jun", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Jul", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Aug", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Sep", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Okt", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Nov", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+        {"maand": "Dec", "abn_hypo": 2500, "rabo_krediet": 1800, "qredits": 850, "totaal": 5150},
+    ]
+}
+
 # Vennootschapsbelasting Data
 VPB_DATA = {
     "boekjaar": "2024",
@@ -662,6 +742,7 @@ with st.sidebar:
             "📄 Facturen": "invoices",
             "📊 Winst & Verlies": "pnl",
             "⚖️ Balans": "balance",
+            "🏗️ Investeringen": "investments",
             "🤖 AI Agents": "agents",
             "💬 Chat met ALEX": "chat",
             "📈 Forecasting": "forecast"
@@ -677,6 +758,7 @@ with st.sidebar:
         st.markdown("")
         
         odoo_options = {
+            "📚 Boekhouding": "odoo_accounting",
             "🎯 CRM Pipeline": "crm",
             "📦 Inkoop (PO's)": "purchase",
             "👥 HR & Personeel": "hr",
@@ -1783,6 +1865,396 @@ else:  # portal_mode == 'klant'
         with col2:
             if st.button("📧 Fiscaal rapport naar klant", key="vpb_report", use_container_width=True):
                 st.info("📧 Rapport verzonden naar Jan Vermeer")
+
+    elif st.session_state.current_view == 'odoo_accounting':
+        st.title("📚 Odoo Boekhouding")
+        st.markdown(f"**{current_client['name']}** | Live synchronisatie met Odoo")
+        
+        # Sync Status Overview
+        st.markdown("### 🔄 Synchronisatie Status")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        stats = ODOO_SYNC_STATUS["ai_booking_stats"]
+        
+        with col1:
+            st.metric("Totaal Mutaties", f"{stats['totaal_mutaties']:,}")
+        with col2:
+            st.metric("Auto. Geboekt (AI)", f"{stats['automatisch_geboekt']:,}", delta=f"{stats['success_rate']}% success")
+        with col3:
+            st.metric("Handmatig Nodig", f"{stats['handmatig_nodig']}", delta="actie vereist", delta_color="inverse")
+        with col4:
+            ok_modules = len([m for m in ODOO_SYNC_STATUS["modules"] if m["status"] == "ok"])
+            total_modules = len(ODOO_SYNC_STATUS["modules"])
+            st.metric("Modules Online", f"{ok_modules}/{total_modules}")
+        
+        st.markdown("---")
+        
+        # Module Status
+        col_left, col_right = st.columns([1, 1])
+        
+        with col_left:
+            st.markdown("### 📡 Module Status")
+            for mod in ODOO_SYNC_STATUS["modules"]:
+                if mod["status"] == "ok":
+                    status_icon = "🟢"
+                    status_bg = "#dcfce7"
+                elif mod["status"] == "warning":
+                    status_icon = "🟡"
+                    status_bg = "#fef3c7"
+                else:
+                    status_icon = "🔴"
+                    status_bg = "#fee2e2"
+                
+                pending_badge = f"<span style='background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;'>{mod['items_pending']} pending</span>" if mod['items_pending'] > 0 else ""
+                
+                st.markdown(f"""
+                <div class="invoice-row" style="background: {status_bg};">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{status_icon} {mod['naam']}</strong>{pending_badge}
+                            <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">{mod['details']}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <small style="color: #94a3b8;">{mod['laatste_sync']}</small>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        with col_right:
+            st.markdown("### 🤖 AI Booking Performance")
+            
+            # Pie chart for AI vs Manual
+            fig = go.Figure(data=[go.Pie(
+                labels=['Automatisch (AI)', 'Handmatig nodig'],
+                values=[stats['automatisch_geboekt'], stats['handmatig_nodig']],
+                hole=0.6,
+                marker_colors=['#10b981', '#f59e0b']
+            )])
+            fig.update_layout(
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=-0.2),
+                margin=dict(t=20, b=40, l=20, r=20),
+                height=250,
+                annotations=[dict(text=f"{stats['success_rate']}%", x=0.5, y=0.5, font_size=24, showarrow=False)]
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("""
+            <div class="agent-card agent-aria">
+                <strong style="color: #3b82f6;">📊 ARIA - Boekings Analyse</strong>
+                <p style="margin: 8px 0 0 0;">87% van alle mutaties wordt automatisch verwerkt. De resterende 13% betreft voornamelijk:</p>
+                <ul style="margin: 4px 0; color: #64748b;">
+                    <li>Onbekende debiteuren/crediteuren (6%)</li>
+                    <li>Complexe aflettering (4%)</li>
+                    <li>Ontbrekende facturen (3%)</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Open Bank Mutations
+        st.markdown("### 🏦 Openstaande Bankmutaties")
+        st.markdown("*Mutaties die AI niet automatisch kon boeken - actie vereist*")
+        
+        for mut in OPEN_BANK_MUTATIONS:
+            amount_color = "#10b981" if mut['bedrag'] > 0 else "#ef4444"
+            amount_prefix = "+" if mut['bedrag'] > 0 else ""
+            
+            st.markdown(f"""
+            <div class="invoice-row">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <strong>{mut['id']}</strong>
+                            <span style="background: #e2e8f0; padding: 2px 8px; border-radius: 8px; font-size: 11px;">{mut['bank']}</span>
+                            <small style="color: #94a3b8;">{mut['datum']}</small>
+                        </div>
+                        <p style="color: #0f172a; margin: 8px 0 4px 0;">{mut['omschrijving']}</p>
+                        <p style="color: #dc2626; font-size: 12px; margin: 0;">⚠️ {mut['reden']}</p>
+                        <p style="color: #10b981; font-size: 12px; margin: 4px 0 0 0;">💡 {mut['suggestie']}</p>
+                    </div>
+                    <div style="text-align: right; min-width: 120px;">
+                        <span style="font-size: 20px; font-weight: 700; color: {amount_color};">{amount_prefix}€ {abs(mut['bedrag']):,.2f}</span>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Action buttons
+        st.markdown("---")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("🔄 Forceer sync alle modules", key="odoo_force_sync", use_container_width=True):
+                st.success("✅ Synchronisatie gestart voor alle modules")
+        with col2:
+            if st.button("📋 Exporteer openstaande mutaties", key="odoo_export_mut", use_container_width=True):
+                st.success("✅ Excel export gedownload")
+        with col3:
+            if st.button("🔧 Naar Odoo Boekhouding", key="odoo_goto", use_container_width=True):
+                st.info("🔗 Opent Odoo in nieuw tabblad...")
+
+    elif st.session_state.current_view == 'investments':
+        st.title("🏗️ Investeringen & Financiering")
+        st.markdown(f"**{current_client['name']}** | Kapitaalgoederen en leningen overzicht")
+        
+        tab1, tab2, tab3 = st.tabs(["💼 Vaste Activa", "📉 Afschrijvingen", "🏦 Financiering"])
+        
+        with tab1:
+            st.markdown("### 💼 Vaste Activa Overzicht")
+            
+            # Summary metrics
+            total_aanschaf = sum(a['aanschaf'] for a in INVESTERINGEN_DATA['activa'])
+            total_afschr = sum(a['afschrijving_cum'] for a in INVESTERINGEN_DATA['activa'])
+            total_boekwaarde = sum(a['boekwaarde'] for a in INVESTERINGEN_DATA['activa'])
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Totaal Aanschafwaarde", format_currency(total_aanschaf))
+            with col2:
+                st.metric("Cumulatieve Afschrijving", format_currency(total_afschr))
+            with col3:
+                st.metric("Totale Boekwaarde", format_currency(total_boekwaarde))
+            
+            st.markdown("---")
+            
+            # Activa table
+            st.markdown("**Kapitaalgoederen per categorie**")
+            
+            for actief in INVESTERINGEN_DATA['activa']:
+                afschr_pct = (actief['afschrijving_cum'] / actief['aanschaf'] * 100) if actief['aanschaf'] > 0 else 0
+                
+                st.markdown(f"""
+                <div class="invoice-row">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <strong>{actief['categorie']}</strong>
+                            <span style="color: #94a3b8; font-size: 12px; margin-left: 8px;">({actief['rgs']})</span>
+                            <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">
+                                {actief['methode']} | Levensduur: {actief['levensduur'] or 'n.v.t.'} jaar | Restwaarde: {format_currency(actief['restwaarde'])}
+                            </p>
+                        </div>
+                        <div style="text-align: right; min-width: 300px;">
+                            <div style="display: flex; justify-content: space-between; gap: 20px;">
+                                <div>
+                                    <small style="color: #94a3b8;">Aanschaf</small><br>
+                                    <span>{format_currency(actief['aanschaf'])}</span>
+                                </div>
+                                <div>
+                                    <small style="color: #94a3b8;">Afgeschr.</small><br>
+                                    <span style="color: #ef4444;">-{format_currency(actief['afschrijving_cum'])}</span>
+                                </div>
+                                <div>
+                                    <small style="color: #94a3b8;">Boekwaarde</small><br>
+                                    <strong>{format_currency(actief['boekwaarde'])}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            
+            # Planned investments
+            st.markdown("### 📅 Geplande Investeringen")
+            for inv in INVESTERINGEN_DATA['geplande_investeringen']:
+                status_color = "#dcfce7" if inv['status'] == "Goedgekeurd" else "#fef3c7" if inv['status'] == "In bestelling" else "#e2e8f0"
+                st.markdown(f"""
+                <div class="invoice-row">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{inv['omschrijving']}</strong>
+                            <p style="color: #64748b; margin: 4px 0 0 0;">Planning: {inv['datum']}</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span style="background: {status_color}; padding: 4px 12px; border-radius: 20px; font-size: 12px;">{inv['status']}</span>
+                            <strong style="font-size: 18px;">{format_currency(inv['bedrag'])}</strong>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        with tab2:
+            st.markdown("### 📉 Afschrijvingsschema")
+            
+            # Yearly depreciation chart
+            years = ['2022', '2023', '2024', '2025 (budget)']
+            categories = [a['categorie'] for a in INVESTERINGEN_DATA['afschrijvingen_jaar']]
+            
+            fig = go.Figure()
+            for afschr in INVESTERINGEN_DATA['afschrijvingen_jaar']:
+                fig.add_trace(go.Bar(
+                    name=afschr['categorie'],
+                    x=years,
+                    y=[afschr['2022'], afschr['2023'], afschr['2024'], afschr['2025_budget']]
+                ))
+            
+            fig.update_layout(
+                barmode='stack',
+                title="Afschrijvingen per jaar per categorie",
+                yaxis_title="Bedrag (€)",
+                legend=dict(orientation="h", yanchor="bottom", y=-0.3),
+                height=400
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Depreciation table
+            st.markdown("**Jaarlijkse afschrijvingslasten**")
+            
+            total_2024 = sum(a['2024'] for a in INVESTERINGEN_DATA['afschrijvingen_jaar'])
+            total_2025 = sum(a['2025_budget'] for a in INVESTERINGEN_DATA['afschrijvingen_jaar'])
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Afschrijving 2024", format_currency(total_2024))
+            with col2:
+                delta = total_2025 - total_2024
+                st.metric("Budget 2025", format_currency(total_2025), delta=format_currency(delta) if delta != 0 else None)
+            
+            # SAGE insight
+            st.markdown(f"""
+            <div class="agent-card agent-sage">
+                <strong style="color: #f59e0b;">💡 SAGE - Investeringsadvies</strong>
+                <p style="margin: 8px 0 0 0;">De afschrijvingslasten dalen in 2025 doordat de ICT Hardware volledig is afgeschreven.</p>
+                <p style="color: #64748b;">Let op: bij de geplande investering in bedrijfswagen (€45.000) komt er circa €7.500/jaar afschrijving bij. Dit beïnvloedt ook de KIA-berekening voor de Vpb.</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with tab3:
+            st.markdown("### 🏦 Financiering Overzicht")
+            
+            # Summary
+            total_schuld = sum(l['openstaand'] for l in FINANCIERING_DATA['leningen_ontvangen'])
+            total_uitstaand = sum(l['openstaand'] for l in FINANCIERING_DATA['leningen_verstrekt'])
+            total_krediet_beschikbaar = sum(k['beschikbaar'] for k in FINANCIERING_DATA['kredietfaciliteiten'])
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Totale Schuld", format_currency(total_schuld), delta="leningen ontvangen", delta_color="off")
+            with col2:
+                st.metric("Uitstaande Leningen", format_currency(total_uitstaand), delta="verstrekt aan derden", delta_color="off")
+            with col3:
+                st.metric("Beschikbaar Krediet", format_currency(total_krediet_beschikbaar))
+            
+            st.markdown("---")
+            
+            # Loans received
+            st.markdown("**📥 Ontvangen Leningen**")
+            for lening in FINANCIERING_DATA['leningen_ontvangen']:
+                progress = 1 - (lening['openstaand'] / lening['hoofdsom'])
+                st.markdown(f"""
+                <div class="invoice-row">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <strong>{lening['verstrekker']}</strong>
+                            <span style="background: #e2e8f0; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">{lening['type']}</span>
+                            <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">
+                                Rente: {lening['rente']}% | Aflossing: {format_currency(lening['aflossing_maand'])}/mnd | Einddatum: {lening['einddatum']}
+                            </p>
+                            <p style="color: #94a3b8; margin: 2px 0 0 0; font-size: 12px;">
+                                Onderpand: {lening['onderpand']}
+                            </p>
+                        </div>
+                        <div style="text-align: right; min-width: 180px;">
+                            <p style="color: #94a3b8; margin: 0;">Openstaand</p>
+                            <strong style="font-size: 20px; color: #ef4444;">{format_currency(lening['openstaand'])}</strong>
+                            <p style="color: #64748b; font-size: 12px; margin: 4px 0 0 0;">van {format_currency(lening['hoofdsom'])}</p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            
+            # Loans given
+            st.markdown("**📤 Verstrekte Leningen**")
+            for lening in FINANCIERING_DATA['leningen_verstrekt']:
+                st.markdown(f"""
+                <div class="invoice-row">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{lening['debiteur']}</strong>
+                            <span style="background: #dbeafe; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">{lening['type']}</span>
+                            <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">
+                                Rente: {lening['rente']}% | Aflossing: {format_currency(lening['aflossing_maand'])}/mnd
+                            </p>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong style="font-size: 18px; color: #10b981;">{format_currency(lening['openstaand'])}</strong>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            
+            # Credit facilities
+            st.markdown("**💳 Kredietfaciliteiten**")
+            for krediet in FINANCIERING_DATA['kredietfaciliteiten']:
+                benut_pct = (krediet['benut'] / krediet['limiet']) * 100
+                bar_color = "#10b981" if benut_pct < 50 else "#f59e0b" if benut_pct < 80 else "#ef4444"
+                st.markdown(f"""
+                <div class="invoice-row">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <strong>{krediet['bank']} - {krediet['type']}</strong>
+                            <div style="background: #e2e8f0; border-radius: 4px; height: 8px; margin-top: 8px; width: 200px;">
+                                <div style="background: {bar_color}; border-radius: 4px; height: 8px; width: {benut_pct}%;"></div>
+                            </div>
+                            <p style="color: #64748b; margin: 4px 0 0 0; font-size: 12px;">
+                                {benut_pct:.0f}% benut
+                            </p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="color: #94a3b8; margin: 0; font-size: 12px;">Beschikbaar</p>
+                            <strong style="font-size: 18px; color: #10b981;">{format_currency(krediet['beschikbaar'])}</strong>
+                            <p style="color: #64748b; font-size: 12px; margin: 0;">van {format_currency(krediet['limiet'])}</p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            
+            # Monthly repayment schedule chart
+            st.markdown("### 📅 Aflossingsschema 2025")
+            
+            months = [a['maand'] for a in FINANCIERING_DATA['aflossingsschema_2025']]
+            
+            fig = go.Figure()
+            fig.add_trace(go.Bar(name='ABN Hypotheek', x=months, y=[a['abn_hypo'] for a in FINANCIERING_DATA['aflossingsschema_2025']], marker_color='#3b82f6'))
+            fig.add_trace(go.Bar(name='Rabo Krediet', x=months, y=[a['rabo_krediet'] for a in FINANCIERING_DATA['aflossingsschema_2025']], marker_color='#f59e0b'))
+            fig.add_trace(go.Bar(name='Qredits', x=months, y=[a['qredits'] for a in FINANCIERING_DATA['aflossingsschema_2025']], marker_color='#10b981'))
+            
+            fig.update_layout(
+                barmode='stack',
+                title="Maandelijkse aflossingsverplichtingen",
+                yaxis_title="Bedrag (€)",
+                legend=dict(orientation="h", yanchor="bottom", y=-0.3),
+                height=350
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Annual summary
+            total_aflossing_jaar = sum(a['totaal'] for a in FINANCIERING_DATA['aflossingsschema_2025'])
+            total_rente_jaar = (280000 * 0.032) + (52000 * 0.048) + (22500 * 0.055)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Totale Aflossing 2025", format_currency(total_aflossing_jaar))
+            with col2:
+                st.metric("Geschatte Rentelast 2025", format_currency(total_rente_jaar))
+            
+            # SAGE insight
+            st.markdown(f"""
+            <div class="agent-card agent-sage">
+                <strong style="color: #f59e0b;">💡 SAGE - Financieringsadvies</strong>
+                <p style="margin: 8px 0 0 0;">Het Rabobank bedrijfskrediet loopt eind 2026 af. Overweeg tijdig herfinanciering als de kredietbehoefte blijft bestaan.</p>
+                <p style="color: #64748b;">De huidige schuldgraad (Debt/Equity ratio) is gezond. Er is ruimte voor aanvullende financiering indien nodig voor de geplande investeringen.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
