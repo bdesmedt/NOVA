@@ -813,7 +813,7 @@ elif st.session_state.current_view == 'invoices':
     # Filter tabs
     tab1, tab2, tab3, tab4 = st.tabs(["Alle", "Nieuw (4)", "Wacht op review (1)", "Verwerkt (3)"])
     
-    def show_invoice_list(invoices):
+    def show_invoice_list(invoices, tab_prefix):
         for inv in invoices:
             status_color = {"nieuw": "#3b82f6", "wacht op review": "#f59e0b", "verwerkt": "#10b981"}
             col1, col2, col3, col4, col5 = st.columns([2, 3, 2, 2, 1])
@@ -833,19 +833,19 @@ elif st.session_state.current_view == 'invoices':
             with col4:
                 st.markdown(f"<span style='background: {status_color.get(inv['status'], '#gray')}20; color: {status_color.get(inv['status'], 'gray')}; padding: 4px 12px; border-radius: 12px; font-size: 12px;'>{inv['status'].upper()}</span>", unsafe_allow_html=True)
             with col5:
-                if st.button("👁️", key=f"view_{inv['id']}"):
+                if st.button("👁️", key=f"{tab_prefix}_view_{inv['id']}"):
                     st.session_state.selected_invoice = inv
             
             st.markdown("---")
     
     with tab1:
-        show_invoice_list(DEMO_INVOICES)
+        show_invoice_list(DEMO_INVOICES, "all")
     with tab2:
-        show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'nieuw'])
+        show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'nieuw'], "new")
     with tab3:
-        show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'wacht op review'])
+        show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'wacht op review'], "review")
     with tab4:
-        show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'verwerkt'])
+        show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'verwerkt'], "done")
 
 elif st.session_state.current_view == 'pnl':
     st.title("📊 Winst & Verliesrekening")
