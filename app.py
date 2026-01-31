@@ -1513,9 +1513,11 @@ else:  # portal_mode == 'klant'
             fig.add_trace(go.Bar(x=months, y=inkomsten, name='Inkomsten', marker_color='#10b981'))
             fig.add_trace(go.Bar(x=months, y=uitgaven, name='Uitgaven', marker_color='#ef4444'))
             fig.add_trace(go.Scatter(x=months, y=saldi, name='Banksaldo', line=dict(color='#0f172a', width=3), yaxis='y2'))
-            # Warning line
-            fig.add_hline(y=CASHFLOW_DATA["warning_buffer"], line_dash="dash", line_color="#f59e0b", annotation_text="Warning buffer", yaxis='y2')
-            fig.add_hline(y=CASHFLOW_DATA["min_buffer"], line_dash="dash", line_color="#ef4444", annotation_text="Min buffer", yaxis='y2')
+            # Warning lines on secondary y-axis
+            fig.add_shape(type="line", x0=0, x1=1, xref="paper", y0=CASHFLOW_DATA["warning_buffer"], y1=CASHFLOW_DATA["warning_buffer"], yref="y2", line=dict(color="#f59e0b", width=2, dash="dash"))
+            fig.add_shape(type="line", x0=0, x1=1, xref="paper", y0=CASHFLOW_DATA["min_buffer"], y1=CASHFLOW_DATA["min_buffer"], yref="y2", line=dict(color="#ef4444", width=2, dash="dash"))
+            fig.add_annotation(x=1, xref="paper", y=CASHFLOW_DATA["warning_buffer"], yref="y2", text="Warning buffer", showarrow=False, xanchor="left", font=dict(color="#f59e0b", size=10))
+            fig.add_annotation(x=1, xref="paper", y=CASHFLOW_DATA["min_buffer"], yref="y2", text="Min buffer", showarrow=False, xanchor="left", font=dict(color="#ef4444", size=10))
             
             fig.update_layout(
                 barmode='relative',
