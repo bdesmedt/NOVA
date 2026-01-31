@@ -1,43 +1,68 @@
 # NOVA Platform Demo
 
 ![NOVA](https://img.shields.io/badge/NOVA-Platform-14b8a6?style=for-the-badge)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Odoo](https://img.shields.io/badge/Odoo-Connected-714B67?style=for-the-badge)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.31-FF4B4B?style=for-the-badge)
 
-> **De toekomst van accounting** - Een conceptuele demo van het NOVA platform voor accountantskantoren.
+> **De toekomst van accounting, vandaag.**
 
-## 🎯 Over NOVA
+NOVA is een conceptueel platform dat accountantskantoren transformeert van compliance-gedreven verwerkers naar strategische business partners. Deze demo toont hoe AI agents en Odoo-integratie samenwerken om financiële dienstverlening te revolutioneren.
 
-NOVA transformeert accountantskantoren van administratieve verwerkers naar strategische financiële partners. Dit platform combineert:
+## 🚀 Live Demo
 
-- **Real-time financieel inzicht** voor ondernemers
-- **AI Agents** die routinetaken automatiseren
-- **Advisory-first** benadering i.p.v. compliance-gedreven
-
-## 🤖 AI Agents
-
-| Agent | Rol | Functie |
-|-------|-----|--------|
-| **ARIA** | Invoice Intelligence | Factuurherkenning & verwerking |
-| **NOVA** | Document Analysis | Documentclassificatie & extractie |
-| **SAGE** | Tax Advisory | Fiscaal advies & optimalisatie |
-| **LUNA** | Forecasting | Prognoses & scenario-analyse |
-| **ALEX** | Client Support | Vraagbeantwoording & uitleg |
-
-## 🚀 Deployen op Streamlit Cloud
+Deploy op Streamlit Cloud:
 
 1. Fork deze repository
 2. Ga naar [share.streamlit.io](https://share.streamlit.io)
-3. Connect je GitHub account
-4. Selecteer deze repo en `app.py`
-5. Klik **Deploy**
+3. Selecteer `app.py` als main file
+4. Deploy!
 
-De app is binnen enkele minuten live!
+## ✨ Features
 
-## 💻 Lokaal draaien
+### 🎯 Client Portal - "Mijn Financiële Cockpit"
+
+| Module | Beschrijving |
+|--------|-------------|
+| **Dashboard** | Real-time KPI's, pipeline overzicht, cashflow forecast |
+| **Facturen** | AI-gestuurde factuurverwerking met 3-way matching |
+| **Winst & Verlies** | Volledige RGS-standaard rapportage |
+| **Balans** | Nederlandse RGS-codes met balanstotaal check |
+| **AI Chat** | Converseer met ALEX over je financiën |
+| **Forecasting** | Scenario-analyses en prognoses |
+
+### 🔗 Odoo Integratie
+
+| Module | NOVA Integratie |
+|--------|------------------|
+| **CRM Pipeline** | LUNA voorspelt cashflow op basis van deals |
+| **Purchase Orders** | ARIA doet 3-way matching met facturen |
+| **HR & Payroll** | SAGE optimaliseert loonstructuren fiscaal |
+
+### 🤖 AI Agents
+
+| Agent | Rol | Odoo Link |
+|-------|-----|----------|
+| **ARIA** | AI Recognition & Invoice Assistant | Sales & Purchase Orders |
+| **NOVA** | Numerical Operations & Verification | Voorraad & Projecten |
+| **SAGE** | Strategic Advisory & Guidance Engine | HR & Payroll |
+| **LUNA** | Lookout & Understanding for Numerical Analysis | CRM Pipeline |
+| **ALEX** | Advisory Liaison & Expert eXchange | Alle Modules |
+
+## 📊 Demo Data
+
+De demo bevat voorbeelddata voor:
+
+- **Vermeer Bouw B.V.** - Fictief bouwbedrijf
+- 8 demo facturen met RGS-codering
+- CRM pipeline met 8 deals (€ 1,4M totaal)
+- Purchase orders met project-koppelingen
+- HR data met 8 medewerkers en WKR-analyse
+- Volledige Winst & Verlies en Balans
+
+## 🛠️ Lokaal draaien
 
 ```bash
-# Clone de repo
+# Clone de repository
 git clone https://github.com/bdesmedt/NOVA.git
 cd NOVA
 
@@ -48,24 +73,43 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## 📊 Features
+## 📁 Project Structuur
 
-- **Dashboard** - KPI's, omzet/kosten grafieken, cashflow
-- **Facturen** - Upload & AI-verwerking simulatie
-- **Winst & Verlies** - Volledige RGS-structuur
-- **Balans** - Activa, Passiva, Eigen Vermogen
-- **AI Agents** - Status & statistieken
-- **Chat** - Interactieve AI-assistent
-- **Forecasting** - Scenario-analyse tool
+```
+NOVA/
+├── app.py              # Hoofdapplicatie
+├── requirements.txt    # Python dependencies
+├── README.md          # Deze file
+└── .gitignore         # Git ignore rules
+```
 
 ## 🎨 Design Filosofie
 
-**"Calm Confidence"** - Een premium fintech-uitstraling die vertrouwen uitstraalt zonder te schreeuwen.
+**"Calm Confidence"** - Een design taal die vertrouwen uitstraalt zonder te overweldigen.
 
-- Deep Navy (#0f172a) als basis
-- Teal (#14b8a6) als accent
-- Veel whitespace, subtiele animaties
+- **Primair:** Deep Navy (#0f172a)
+- **Accent:** Teal (#14b8a6)  
+- **Odoo:** Purple (#714B67)
+- **Typografie:** Inter (clean, modern)
+
+## 📈 Roadmap Visie
+
+| Jaar | Focus |
+|------|-------|
+| 2025 | NOVA Core - AI Agents & Portals |
+| 2026 | Odoo Basis - CRM, Sales, Inkoop |
+| 2027 | Odoo Extended - HR, Voorraad, Projecten |
+| 2028 | Multi-Entity - Consolidatie & Holdings |
+| 2029 | Full Ecosystem - COO-as-a-Service |
+
+## 📄 Licentie
+
+Dit is een demo/concept project voor presentatiedoeleinden.
 
 ---
 
-*Dit is een conceptuele demo voor presentatiedoeleinden.*
+<p align="center">
+  <strong>NOVA</strong> - Van boekhouder naar strategische partner
+  <br>
+  <sub>Gebouwd met ❤️ voor de accountants van de toekomst</sub>
+</p>
