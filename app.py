@@ -80,6 +80,7 @@ st.markdown("""
     .agent-sage { border-left-color: #f59e0b; background: linear-gradient(to right, rgba(245,158,11,0.05), white); }
     .agent-luna { border-left-color: #3b82f6; background: linear-gradient(to right, rgba(59,130,246,0.05), white); }
     .agent-alex { border-left-color: #ec4899; background: linear-gradient(to right, rgba(236,72,153,0.05), white); }
+    .agent-mira { border-left-color: #06b6d4; background: linear-gradient(to right, rgba(6,182,212,0.05), white); }
 
     /* Enhanced status badges with icons */
     .status-active {
@@ -751,6 +752,16 @@ AI_AGENTS = {
         "accuracy": 96.8,
         "description": "Beantwoordt vragen en geeft uitleg",
         "odoo_link": "Alle Modules"
+    },
+    "MIRA": {
+        "full_name": "Monthly Intelligence & Reconciliation Agent",
+        "role": "Periodeafsluiting",
+        "color": "#06b6d4",
+        "status": "Actief",
+        "processed_today": 5,
+        "accuracy": 99.1,
+        "description": "Bewaakt maand-/kwartaalafsluitingen, signaleert budgetafwijkingen en coördineert checklist",
+        "odoo_link": "Accounting & Reconciliation"
     }
 }
 
@@ -1026,6 +1037,370 @@ VPB_DATA = {
 }
 
 # ============================================
+# MONTHLY CLOSING DATA (MIRA Agent)
+# ============================================
+
+# Closing periods configuration
+CLOSING_PERIODS = {
+    "2025-01": {"name": "Januari 2025", "status": "open", "deadline": "2025-02-15", "type": "monthly"},
+    "2024-12": {"name": "December 2024", "status": "closed", "deadline": "2025-01-15", "type": "monthly"},
+    "2024-Q4": {"name": "Q4 2024", "status": "closed", "deadline": "2025-01-31", "type": "quarterly"},
+    "2024-11": {"name": "November 2024", "status": "closed", "deadline": "2024-12-15", "type": "monthly"},
+    "2024-10": {"name": "Oktober 2024", "status": "closed", "deadline": "2024-11-15", "type": "monthly"},
+    "2024-Q3": {"name": "Q3 2024", "status": "closed", "deadline": "2024-10-31", "type": "quarterly"},
+}
+
+# Monthly closing checklist template
+CLOSING_CHECKLIST = [
+    {
+        "id": "CHK-001",
+        "category": "Bankreconciliatie",
+        "task": "Bankmutaties volledig geboekt",
+        "description": "Controleer of alle bankmutaties zijn geïmporteerd en geboekt in Odoo",
+        "status": "completed",
+        "responsible_agent": "ARIA",
+        "odoo_module": "account.bank.statement",
+        "automated": True,
+        "completion_date": "2025-01-28",
+        "notes": "Automatisch geverifieerd door ARIA - 100% gematcht"
+    },
+    {
+        "id": "CHK-002",
+        "category": "Bankreconciliatie",
+        "task": "Banksaldo afgestemd met grootboek",
+        "description": "Eindsaldo bank = saldo grootboekrekening bank",
+        "status": "completed",
+        "responsible_agent": "MIRA",
+        "odoo_module": "account.move",
+        "automated": True,
+        "completion_date": "2025-01-28",
+        "notes": "Saldo ING: € 87.500 - Verschil: € 0"
+    },
+    {
+        "id": "CHK-003",
+        "category": "Inkoopfacturen",
+        "task": "Alle inkoopfacturen geboekt",
+        "description": "Controleer dat alle ontvangen facturen zijn ingevoerd",
+        "status": "attention",
+        "responsible_agent": "ARIA",
+        "odoo_module": "account.move",
+        "automated": True,
+        "completion_date": None,
+        "notes": "4 facturen wachten nog op boeking - doorsturen naar ARIA"
+    },
+    {
+        "id": "CHK-004",
+        "category": "Inkoopfacturen",
+        "task": "Inkoopfacturen afgestemd met PO's",
+        "description": "3-way matching: PO, ontvangst, factuur",
+        "status": "completed",
+        "responsible_agent": "ARIA",
+        "odoo_module": "purchase.order",
+        "automated": True,
+        "completion_date": "2025-01-29",
+        "notes": "5 van 5 PO's gematcht"
+    },
+    {
+        "id": "CHK-005",
+        "category": "Verkoopfacturen",
+        "task": "Omzet volledig gefactureerd",
+        "description": "Alle leveringen/diensten zijn gefactureerd",
+        "status": "completed",
+        "responsible_agent": "ARIA",
+        "odoo_module": "sale.order",
+        "automated": True,
+        "completion_date": "2025-01-30",
+        "notes": "Omzet januari: € 612.500"
+    },
+    {
+        "id": "CHK-006",
+        "category": "Verkoopfacturen",
+        "task": "Debiteuren ouderdom geanalyseerd",
+        "description": "Controleer openstaande debiteuren op ouderdom",
+        "status": "attention",
+        "responsible_agent": "MIRA",
+        "odoo_module": "account.aged.receivable",
+        "automated": True,
+        "completion_date": None,
+        "notes": "3 facturen > 60 dagen - Escalatie nodig"
+    },
+    {
+        "id": "CHK-007",
+        "category": "Voorraad",
+        "task": "Voorraadwaardering gecontroleerd",
+        "description": "Voorraad gewaardeerd tegen correcte kostprijs",
+        "status": "completed",
+        "responsible_agent": "NOVA",
+        "odoo_module": "stock.valuation",
+        "automated": True,
+        "completion_date": "2025-01-30",
+        "notes": "Voorraadwaarde: € 45.000"
+    },
+    {
+        "id": "CHK-008",
+        "category": "Personeel",
+        "task": "Salarisverwerking compleet",
+        "description": "Lonen geboekt incl. sociale lasten en pensioenen",
+        "status": "completed",
+        "responsible_agent": "SAGE",
+        "odoo_module": "hr.payslip",
+        "automated": False,
+        "completion_date": "2025-01-27",
+        "notes": "Totale loonkosten: € 36.100"
+    },
+    {
+        "id": "CHK-009",
+        "category": "Personeel",
+        "task": "WKR-ruimte gecontroleerd",
+        "description": "Werkkostenregeling binnen vrije ruimte",
+        "status": "completed",
+        "responsible_agent": "SAGE",
+        "odoo_module": "hr.expense",
+        "automated": True,
+        "completion_date": "2025-01-27",
+        "notes": "WKR: 62% benut van € 6.498"
+    },
+    {
+        "id": "CHK-010",
+        "category": "Afschrijvingen",
+        "task": "Afschrijvingen geboekt",
+        "description": "Maandelijkse afschrijvingen op vaste activa",
+        "status": "pending",
+        "responsible_agent": "MIRA",
+        "odoo_module": "account.asset",
+        "automated": True,
+        "completion_date": None,
+        "notes": "Wacht op goedkeuring - € 2.900 te boeken"
+    },
+    {
+        "id": "CHK-011",
+        "category": "Overlopende posten",
+        "task": "Vooruitbetaalde kosten verwerkt",
+        "description": "Periodieke verdeling van vooruitbetaalde kosten",
+        "status": "pending",
+        "responsible_agent": "MIRA",
+        "odoo_module": "account.move",
+        "automated": False,
+        "completion_date": None,
+        "notes": "Verzekeringen en abonnementen toerekenen"
+    },
+    {
+        "id": "CHK-012",
+        "category": "BTW",
+        "task": "BTW-aangifte voorbereid",
+        "description": "Concept BTW-aangifte gegenereerd en gecontroleerd",
+        "status": "completed",
+        "responsible_agent": "SAGE",
+        "odoo_module": "account.tax.report",
+        "automated": True,
+        "completion_date": "2025-01-30",
+        "notes": "BTW te betalen: € 45.000"
+    },
+    {
+        "id": "CHK-013",
+        "category": "Afsluiting",
+        "task": "Intercompany afgestemd",
+        "description": "Controleer intercompany balansen indien van toepassing",
+        "status": "not_applicable",
+        "responsible_agent": "MIRA",
+        "odoo_module": "account.move",
+        "automated": False,
+        "completion_date": None,
+        "notes": "N.v.t. - geen intercompany relaties"
+    },
+    {
+        "id": "CHK-014",
+        "category": "Afsluiting",
+        "task": "Budgetvarianties geanalyseerd",
+        "description": "Significante afwijkingen t.o.v. budget verklaard",
+        "status": "in_progress",
+        "responsible_agent": "MIRA",
+        "odoo_module": "account.budget",
+        "automated": True,
+        "completion_date": None,
+        "notes": "2 significante varianties gedetecteerd - analyse lopend"
+    },
+    {
+        "id": "CHK-015",
+        "category": "Afsluiting",
+        "task": "Periode afgesloten in Odoo",
+        "description": "Periode vergrendelen voor nieuwe boekingen",
+        "status": "blocked",
+        "responsible_agent": "MIRA",
+        "odoo_module": "account.period",
+        "automated": False,
+        "completion_date": None,
+        "notes": "Wacht op voltooiing van alle taken"
+    }
+]
+
+# Budget vs Actual data for variance analysis
+BUDGET_VS_ACTUAL = {
+    "period": "Januari 2025",
+    "categories": [
+        {
+            "category": "Omzet",
+            "rgs_code": "WOmzNet",
+            "budget": 580000,
+            "actual": 612500,
+            "variance": 32500,
+            "variance_pct": 5.6,
+            "status": "favorable",
+            "explanation": "Hogere vraag naar nieuwbouwprojecten",
+            "action_required": False
+        },
+        {
+            "category": "Kostprijs omzet",
+            "rgs_code": "WKprOmz",
+            "budget": -320000,
+            "actual": -345000,
+            "variance": -25000,
+            "variance_pct": 7.8,
+            "status": "unfavorable",
+            "explanation": "Gestegen materiaalprijzen door leveringsproblemen",
+            "action_required": True,
+            "action": "Heronderhandeling leverancierscontracten - doorsturen naar inkoop"
+        },
+        {
+            "category": "Personeelskosten",
+            "rgs_code": "WPerLon",
+            "budget": -36000,
+            "actual": -36100,
+            "variance": -100,
+            "variance_pct": 0.3,
+            "status": "on_track",
+            "explanation": "Binnen marge",
+            "action_required": False
+        },
+        {
+            "category": "Huisvestingskosten",
+            "rgs_code": "WBehHui",
+            "budget": -8500,
+            "actual": -8750,
+            "variance": -250,
+            "variance_pct": 2.9,
+            "status": "on_track",
+            "explanation": "Hogere energiekosten door koude maand",
+            "action_required": False
+        },
+        {
+            "category": "Autokosten",
+            "rgs_code": "WBehAut",
+            "budget": -4200,
+            "actual": -3950,
+            "variance": 250,
+            "variance_pct": -6.0,
+            "status": "favorable",
+            "explanation": "Minder kilometers door efficiëntere planning",
+            "action_required": False
+        },
+        {
+            "category": "Afschrijvingen",
+            "rgs_code": "WAfsMat",
+            "budget": -2900,
+            "actual": -2900,
+            "variance": 0,
+            "variance_pct": 0.0,
+            "status": "on_track",
+            "explanation": "Conform planning",
+            "action_required": False
+        },
+        {
+            "category": "Overige bedrijfskosten",
+            "rgs_code": "WBehOvr",
+            "budget": -12000,
+            "actual": -14200,
+            "variance": -2200,
+            "variance_pct": 18.3,
+            "status": "unfavorable",
+            "explanation": "Onverwachte IT-kosten en consultancy",
+            "action_required": True,
+            "action": "Analyse IT-uitgaven - eventueel aanpassen jaarbudget"
+        },
+        {
+            "category": "Financiële lasten",
+            "rgs_code": "WFinLas",
+            "budget": -3200,
+            "actual": -3100,
+            "variance": 100,
+            "variance_pct": -3.1,
+            "status": "favorable",
+            "explanation": "Lagere rente door aflossing",
+            "action_required": False
+        }
+    ],
+    "summary": {
+        "budget_result": 193200,
+        "actual_result": 198500,
+        "total_variance": 5300,
+        "total_variance_pct": 2.7,
+        "status": "favorable"
+    }
+}
+
+# Issues requiring attention from other agents
+CLOSING_ISSUES = [
+    {
+        "id": "ISS-001",
+        "type": "booking_required",
+        "severity": "warning",
+        "title": "4 inkoopfacturen wachten op boeking",
+        "description": "Facturen ontvangen maar nog niet verwerkt in Odoo",
+        "amount": 12849.00,
+        "route_to_agent": "ARIA",
+        "status": "open",
+        "created_date": "2025-01-28",
+        "action": "Facturen laten verwerken door ARIA"
+    },
+    {
+        "id": "ISS-002",
+        "type": "variance_alert",
+        "severity": "attention",
+        "title": "Kostprijs omzet 7.8% boven budget",
+        "description": "Materiaalprijzen significant hoger dan gepland",
+        "amount": -25000,
+        "route_to_agent": "SAGE",
+        "status": "under_review",
+        "created_date": "2025-01-30",
+        "action": "Fiscale impact beoordelen en advies leverancierscontracten"
+    },
+    {
+        "id": "ISS-003",
+        "type": "overdue_receivables",
+        "severity": "warning",
+        "title": "3 debiteuren > 60 dagen openstaand",
+        "description": "Openstaande facturen vereisen incasso-actie",
+        "amount": 28500,
+        "route_to_agent": "ALEX",
+        "status": "open",
+        "created_date": "2025-01-29",
+        "action": "Klantcontact opnemen via ALEX"
+    },
+    {
+        "id": "ISS-004",
+        "type": "approval_required",
+        "severity": "info",
+        "title": "Afschrijvingen wachten op goedkeuring",
+        "description": "Maandelijkse afschrijvingen klaar voor boeking",
+        "amount": 2900,
+        "route_to_agent": None,
+        "status": "pending_approval",
+        "created_date": "2025-01-30",
+        "action": "Goedkeuren door accountant"
+    }
+]
+
+# Historical closing data for trends
+CLOSING_HISTORY = [
+    {"period": "2024-12", "name": "December 2024", "result": 185000, "budget": 180000, "variance_pct": 2.8, "days_to_close": 12, "issues_found": 3},
+    {"period": "2024-11", "name": "November 2024", "result": 172000, "budget": 175000, "variance_pct": -1.7, "days_to_close": 10, "issues_found": 2},
+    {"period": "2024-10", "name": "Oktober 2024", "result": 168000, "budget": 170000, "variance_pct": -1.2, "days_to_close": 11, "issues_found": 4},
+    {"period": "2024-09", "name": "September 2024", "result": 195000, "budget": 185000, "variance_pct": 5.4, "days_to_close": 9, "issues_found": 1},
+    {"period": "2024-08", "name": "Augustus 2024", "result": 142000, "budget": 145000, "variance_pct": -2.1, "days_to_close": 14, "issues_found": 5},
+    {"period": "2024-07", "name": "Juli 2024", "result": 138000, "budget": 140000, "variance_pct": -1.4, "days_to_close": 13, "issues_found": 2},
+]
+
+# ============================================
 # HELPER FUNCTIONS
 # ============================================
 
@@ -1273,6 +1648,7 @@ with st.sidebar:
 
         odoo_options = {
             "📚 Boekhouding": "odoo_accounting",
+            "📅 Periodeafsluiting": "monthly_closing",
             "🎯 CRM Pipeline": "crm",
             "📦 Inkoop (PO's)": "purchase",
             "👥 HR & Personeel": "hr",
@@ -3253,6 +3629,538 @@ else:  # portal_mode == 'klant'
         with col3:
             if st.button("🔧 Naar Odoo Boekhouding", key="odoo_goto", use_container_width=True):
                 st.info("🔗 Opent Odoo in nieuw tabblad...")
+
+    elif st.session_state.current_view == 'monthly_closing':
+        # MONTHLY CLOSING - MIRA Agent View
+        st.markdown("""
+        <div style="margin-bottom: 24px;">
+            <h1 style="color: #0f172a; margin: 0; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 32px;">📅</span> Periodeafsluiting
+            </h1>
+            <p style="color: #64748b; font-size: 15px; margin: 8px 0 0 0;">
+                <strong>{}</strong> &nbsp;•&nbsp; Beheerd door <span style="color: #06b6d4; font-weight: 600;">MIRA</span>
+            </p>
+        </div>
+        """.format(current_client['name']), unsafe_allow_html=True)
+
+        # Period selector
+        st.markdown("### 📆 Selecteer Periode")
+        col1, col2, col3 = st.columns([2, 2, 2])
+
+        with col1:
+            period_type = st.radio("Type", ["Maandelijks", "Kwartaal"], horizontal=True, key="closing_period_type")
+
+        available_periods = [p for p in CLOSING_PERIODS.items() if (period_type == "Maandelijks" and CLOSING_PERIODS[p[0]]["type"] == "monthly") or (period_type == "Kwartaal" and CLOSING_PERIODS[p[0]]["type"] == "quarterly")]
+        period_names = [p[1]["name"] for p in available_periods]
+
+        with col2:
+            selected_period_name = st.selectbox("Periode", period_names, key="selected_period")
+
+        # Find the selected period
+        selected_period_key = None
+        for key, data in CLOSING_PERIODS.items():
+            if data["name"] == selected_period_name:
+                selected_period_key = key
+                break
+
+        selected_period = CLOSING_PERIODS.get(selected_period_key, list(CLOSING_PERIODS.values())[0])
+
+        with col3:
+            status_color = "#10b981" if selected_period["status"] == "closed" else "#f59e0b"
+            status_text = "Afgesloten" if selected_period["status"] == "closed" else "Open"
+            st.markdown(f"""
+            <div style="padding-top: 25px;">
+                <span style="background: {status_color}; color: white; padding: 6px 16px; border-radius: 20px; font-weight: 600;">
+                    {status_text}
+                </span>
+                <span style="color: #64748b; margin-left: 12px; font-size: 13px;">Deadline: {selected_period["deadline"]}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # Summary KPIs for current period
+        completed = len([c for c in CLOSING_CHECKLIST if c["status"] == "completed"])
+        attention = len([c for c in CLOSING_CHECKLIST if c["status"] == "attention"])
+        pending = len([c for c in CLOSING_CHECKLIST if c["status"] in ["pending", "in_progress"]])
+        blocked = len([c for c in CLOSING_CHECKLIST if c["status"] == "blocked"])
+        total_tasks = len([c for c in CLOSING_CHECKLIST if c["status"] != "not_applicable"])
+
+        col1, col2, col3, col4, col5 = st.columns(5)
+
+        with col1:
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid #06b6d4; text-align: center;">
+                <p class="metric-label">VOORTGANG</p>
+                <p class="metric-value" style="color: #06b6d4;">{int(completed/total_tasks*100)}%</p>
+                <p style="color: #64748b; font-size: 12px;">{completed}/{total_tasks} taken</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid #10b981; text-align: center;">
+                <p class="metric-label">VOLTOOID</p>
+                <p class="metric-value" style="color: #10b981;">{completed}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col3:
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid #f59e0b; text-align: center;">
+                <p class="metric-label">AANDACHT</p>
+                <p class="metric-value" style="color: #f59e0b;">{attention}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col4:
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid #3b82f6; text-align: center;">
+                <p class="metric-label">IN AFWACHTING</p>
+                <p class="metric-value" style="color: #3b82f6;">{pending}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col5:
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid #ef4444; text-align: center;">
+                <p class="metric-label">GEBLOKKEERD</p>
+                <p class="metric-value" style="color: #ef4444;">{blocked}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Tabs for different sections
+        tab1, tab2, tab3, tab4 = st.tabs(["📋 Checklist", "📊 Budget vs Realisatie", "⚠️ Actiepunten", "📈 Historisch"])
+
+        with tab1:
+            st.markdown("### 📋 Afsluitingschecklist")
+            st.markdown("*Taken worden automatisch gemonitord door MIRA en doorgestuurd naar de juiste agent*")
+
+            # Filter
+            filter_col1, filter_col2 = st.columns([1, 3])
+            with filter_col1:
+                status_filter = st.selectbox("Filter", ["Alle", "Voltooid", "Aandacht nodig", "In afwachting", "Geblokkeerd"], key="checklist_filter")
+
+            # Group by category
+            categories = {}
+            for item in CLOSING_CHECKLIST:
+                cat = item["category"]
+                if cat not in categories:
+                    categories[cat] = []
+                categories[cat].append(item)
+
+            for category, items in categories.items():
+                # Filter items
+                if status_filter == "Voltooid":
+                    filtered_items = [i for i in items if i["status"] == "completed"]
+                elif status_filter == "Aandacht nodig":
+                    filtered_items = [i for i in items if i["status"] == "attention"]
+                elif status_filter == "In afwachting":
+                    filtered_items = [i for i in items if i["status"] in ["pending", "in_progress"]]
+                elif status_filter == "Geblokkeerd":
+                    filtered_items = [i for i in items if i["status"] == "blocked"]
+                else:
+                    filtered_items = items
+
+                if not filtered_items:
+                    continue
+
+                st.markdown(f"#### {category}")
+
+                for item in filtered_items:
+                    # Status styling
+                    if item["status"] == "completed":
+                        status_icon = "✅"
+                        status_bg = "#dcfce7"
+                        status_border = "#10b981"
+                        status_text = "Voltooid"
+                    elif item["status"] == "attention":
+                        status_icon = "⚠️"
+                        status_bg = "#fef3c7"
+                        status_border = "#f59e0b"
+                        status_text = "Aandacht nodig"
+                    elif item["status"] == "in_progress":
+                        status_icon = "🔄"
+                        status_bg = "#dbeafe"
+                        status_border = "#3b82f6"
+                        status_text = "In behandeling"
+                    elif item["status"] == "pending":
+                        status_icon = "⏳"
+                        status_bg = "#f1f5f9"
+                        status_border = "#64748b"
+                        status_text = "In afwachting"
+                    elif item["status"] == "blocked":
+                        status_icon = "🚫"
+                        status_bg = "#fee2e2"
+                        status_border = "#ef4444"
+                        status_text = "Geblokkeerd"
+                    else:
+                        status_icon = "➖"
+                        status_bg = "#f1f5f9"
+                        status_border = "#94a3b8"
+                        status_text = "N.v.t."
+
+                    agent_color = AI_AGENTS.get(item["responsible_agent"], {}).get("color", "#64748b")
+                    automated_badge = '<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 8px;">AUTO</span>' if item["automated"] else ""
+
+                    st.markdown(f"""
+                    <div class="invoice-row" style="border-left: 4px solid {status_border}; background: {status_bg};">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span style="font-size: 18px;">{status_icon}</span>
+                                    <div>
+                                        <strong style="color: #0f172a;">{item["task"]}</strong>{automated_badge}
+                                        <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">{item["description"]}</p>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 8px; display: flex; gap: 16px; align-items: center;">
+                                    <span style="color: {agent_color}; font-weight: 600; font-size: 12px;">Agent: {item["responsible_agent"]}</span>
+                                    <span class="odoo-badge" style="font-size: 10px;">{item["odoo_module"]}</span>
+                                    {f'<span style="color: #64748b; font-size: 11px;">Voltooid: {item["completion_date"]}</span>' if item["completion_date"] else ""}
+                                </div>
+                                {f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {item["notes"]}</p>' if item["notes"] else ""}
+                            </div>
+                            <div style="text-align: right; min-width: 120px;">
+                                <span style="background: {status_border}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">{status_text}</span>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("")
+
+        with tab2:
+            st.markdown("### 📊 Budget vs Realisatie - " + BUDGET_VS_ACTUAL["period"])
+            st.markdown("*MIRA analyseert automatisch significante afwijkingen en signaleert actie-items*")
+
+            # Summary cards
+            summary = BUDGET_VS_ACTUAL["summary"]
+            summary_color = "#10b981" if summary["status"] == "favorable" else "#ef4444"
+            variance_icon = "↑" if summary["total_variance"] > 0 else "↓"
+
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Budget Resultaat", format_currency(summary["budget_result"]))
+            with col2:
+                st.metric("Werkelijk Resultaat", format_currency(summary["actual_result"]))
+            with col3:
+                st.metric("Variantie", format_currency(summary["total_variance"]), delta=f"{summary['total_variance_pct']}%")
+            with col4:
+                st.markdown(f"""
+                <div class="metric-card" style="border-top: 4px solid {summary_color}; text-align: center;">
+                    <p class="metric-label">STATUS</p>
+                    <p class="metric-value" style="color: {summary_color}; font-size: 24px;">
+                        {"Gunstig" if summary["status"] == "favorable" else "Ongunstig"}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # Variance chart
+            st.markdown("#### 📈 Variantie per Categorie")
+
+            categories_chart = [c["category"] for c in BUDGET_VS_ACTUAL["categories"]]
+            variances = [c["variance"] for c in BUDGET_VS_ACTUAL["categories"]]
+            colors = ["#10b981" if v >= 0 else "#ef4444" for v in variances]
+
+            fig = go.Figure(data=[
+                go.Bar(
+                    x=categories_chart,
+                    y=variances,
+                    marker_color=colors,
+                    text=[f"€{v:,.0f}" for v in variances],
+                    textposition='outside'
+                )
+            ])
+            fig.update_layout(
+                title="",
+                xaxis_title="",
+                yaxis_title="Variantie (€)",
+                height=350,
+                margin=dict(t=20, b=80),
+                xaxis_tickangle=-45
+            )
+            fig.add_hline(y=0, line_dash="solid", line_color="#64748b", line_width=1)
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.markdown("---")
+
+            # Detail table
+            st.markdown("#### 📋 Detail per Categorie")
+
+            # Header
+            st.markdown("""
+            <div style="display: grid; grid-template-columns: 3fr 2fr 2fr 2fr 2fr 3fr; gap: 12px; padding: 12px 16px;
+                        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 10px 10px 0 0; color: white;">
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Categorie</span>
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; text-align: right;">Budget</span>
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; text-align: right;">Realisatie</span>
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; text-align: right;">Variantie</span>
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; text-align: center;">Status</span>
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Toelichting</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            for cat in BUDGET_VS_ACTUAL["categories"]:
+                if cat["status"] == "favorable":
+                    status_color = "#10b981"
+                    status_text = "Gunstig"
+                elif cat["status"] == "unfavorable":
+                    status_color = "#ef4444"
+                    status_text = "Ongunstig"
+                else:
+                    status_color = "#64748b"
+                    status_text = "Op schema"
+
+                variance_display = format_currency(cat["variance"])
+                variance_pct = f"({cat['variance_pct']:+.1f}%)"
+                action_badge = '<span style="background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 8px; font-size: 10px; margin-left: 4px;">ACTIE</span>' if cat.get("action_required") else ""
+
+                st.markdown(f"""
+                <div class="rgs-row" style="display: grid; grid-template-columns: 3fr 2fr 2fr 2fr 2fr 3fr; gap: 12px; align-items: center;">
+                    <span><strong>{cat["category"]}</strong><br><small style="color: #94a3b8;">{cat["rgs_code"]}</small></span>
+                    <span style="text-align: right;">{format_currency(cat["budget"])}</span>
+                    <span style="text-align: right;">{format_currency(cat["actual"])}</span>
+                    <span style="text-align: right; color: {status_color}; font-weight: 600;">{variance_display}<br><small>{variance_pct}</small></span>
+                    <span style="text-align: center;"><span style="background: {status_color}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px;">{status_text}</span></span>
+                    <span style="font-size: 12px; color: #475569;">{cat["explanation"]}{action_badge}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Total row
+            st.markdown(f"""
+            <div class="rgs-row rgs-total" style="display: grid; grid-template-columns: 3fr 2fr 2fr 2fr 2fr 3fr; gap: 12px; align-items: center; background: #0f172a; color: white; border-radius: 0 0 10px 10px;">
+                <span><strong>NETTO RESULTAAT</strong></span>
+                <span style="text-align: right; font-weight: 700;">{format_currency(summary["budget_result"])}</span>
+                <span style="text-align: right; font-weight: 700;">{format_currency(summary["actual_result"])}</span>
+                <span style="text-align: right; font-weight: 700; color: {"#10b981" if summary["total_variance"] >= 0 else "#ef4444"};">{format_currency(summary["total_variance"])}<br><small>({summary["total_variance_pct"]:+.1f}%)</small></span>
+                <span></span>
+                <span></span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with tab3:
+            st.markdown("### ⚠️ Actiepunten - Doorverwijzing naar Agents")
+            st.markdown("*MIRA identificeert problemen en routeert deze naar de juiste agent voor actie*")
+            st.markdown("")
+
+            # MIRA insight card
+            st.markdown(f"""
+            <div class="agent-card agent-mira">
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="min-width: 48px; height: 48px; background: rgba(6,182,212,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        🔍
+                    </div>
+                    <div>
+                        <strong style="color: #06b6d4;">MIRA - Analyse Samenvatting</strong>
+                        <p style="margin: 8px 0;">Er zijn <strong>{len(CLOSING_ISSUES)} actiepunten</strong> geïdentificeerd voor deze periode.
+                        MIRA kan deze zelf niet oplossen omdat de boekingshandelingen door andere agents uitgevoerd moeten worden.</p>
+                        <p style="color: #64748b; font-size: 13px; margin: 0;">
+                            De issues zijn automatisch gecategoriseerd en doorverwezen naar de verantwoordelijke agents.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("")
+
+            for issue in CLOSING_ISSUES:
+                if issue["severity"] == "warning":
+                    severity_color = "#f59e0b"
+                    severity_bg = "#fef3c7"
+                    severity_icon = "⚠️"
+                elif issue["severity"] == "attention":
+                    severity_color = "#3b82f6"
+                    severity_bg = "#dbeafe"
+                    severity_icon = "🔔"
+                else:
+                    severity_color = "#64748b"
+                    severity_bg = "#f1f5f9"
+                    severity_icon = "ℹ️"
+
+                agent_info = AI_AGENTS.get(issue["route_to_agent"], {})
+                agent_color = agent_info.get("color", "#64748b")
+                agent_name = issue["route_to_agent"] if issue["route_to_agent"] else "Handmatig"
+
+                status_badge = ""
+                if issue["status"] == "open":
+                    status_badge = '<span style="background: #fee2e2; color: #dc2626; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">OPEN</span>'
+                elif issue["status"] == "under_review":
+                    status_badge = '<span style="background: #dbeafe; color: #1e40af; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">IN REVIEW</span>'
+                elif issue["status"] == "pending_approval":
+                    status_badge = '<span style="background: #fef3c7; color: #92400e; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">WACHT OP GOEDKEURING</span>'
+
+                st.markdown(f"""
+                <div class="alert-card" style="border-left: 5px solid {severity_color}; background: linear-gradient(135deg, {severity_bg} 0%, white 100%);">
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="min-width: 40px; height: 40px; background: {severity_bg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            {severity_icon}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <strong style="color: #0f172a; font-size: 15px;">{issue["title"]}</strong>
+                                    {status_badge}
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-size: 18px; font-weight: 700; color: {severity_color};">{format_currency(abs(issue["amount"]))}</span>
+                                </div>
+                            </div>
+                            <p style="color: #475569; margin: 8px 0; font-size: 14px;">{issue["description"]}</p>
+                            <div style="display: flex; gap: 16px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06);">
+                                <span style="color: {agent_color}; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                                    <span style="width: 8px; height: 8px; background: {agent_color}; border-radius: 50%;"></span>
+                                    Doorverwezen naar: {agent_name}
+                                </span>
+                                <span style="color: #64748b; font-size: 12px;">|</span>
+                                <span style="color: #64748b; font-size: 12px;">📅 {issue["created_date"]}</span>
+                            </div>
+                            <p style="color: #0f172a; font-size: 13px; margin: 8px 0 0 0; font-weight: 500;">
+                                ➡️ Actie: {issue["action"]}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # Action buttons
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button("🔄 Ververs Status", key="refresh_issues", use_container_width=True):
+                    st.success("✅ Status bijgewerkt vanuit Odoo")
+            with col2:
+                if st.button("📧 Stuur Samenvatting naar Team", key="send_summary", use_container_width=True):
+                    st.success("📧 Samenvatting verzonden")
+            with col3:
+                if st.button("📋 Exporteer naar Excel", key="export_issues", use_container_width=True):
+                    st.success("📄 Excel gedownload")
+
+        with tab4:
+            st.markdown("### 📈 Historisch Overzicht")
+            st.markdown("*Trend analyse van afgelopen periodes*")
+
+            # Summary metrics
+            avg_days = sum(h["days_to_close"] for h in CLOSING_HISTORY) / len(CLOSING_HISTORY)
+            avg_variance = sum(h["variance_pct"] for h in CLOSING_HISTORY) / len(CLOSING_HISTORY)
+            total_issues = sum(h["issues_found"] for h in CLOSING_HISTORY)
+
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Gem. Dagen tot Afsluiting", f"{avg_days:.1f}")
+            with col2:
+                st.metric("Gem. Budget Variantie", f"{avg_variance:+.1f}%")
+            with col3:
+                st.metric("Totaal Issues (6 mnd)", total_issues)
+            with col4:
+                st.metric("Periodes Geanalyseerd", len(CLOSING_HISTORY))
+
+            st.markdown("---")
+
+            # Results trend chart
+            st.markdown("#### 📊 Resultaat vs Budget - Trend")
+
+            periods = [h["name"] for h in CLOSING_HISTORY]
+            actuals = [h["result"] for h in CLOSING_HISTORY]
+            budgets = [h["budget"] for h in CLOSING_HISTORY]
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=periods, y=actuals, name='Realisatie', line=dict(color='#06b6d4', width=3), mode='lines+markers'))
+            fig.add_trace(go.Scatter(x=periods, y=budgets, name='Budget', line=dict(color='#64748b', width=2, dash='dash'), mode='lines+markers'))
+            fig.update_layout(
+                title="",
+                xaxis_title="",
+                yaxis_title="Resultaat (€)",
+                height=350,
+                legend=dict(orientation="h", yanchor="bottom", y=1.02),
+                margin=dict(t=40, b=40)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+            # Variance trend
+            st.markdown("#### 📉 Variantie % - Trend")
+
+            variances_hist = [h["variance_pct"] for h in CLOSING_HISTORY]
+            colors_hist = ["#10b981" if v >= 0 else "#ef4444" for v in variances_hist]
+
+            fig2 = go.Figure(data=[
+                go.Bar(x=periods, y=variances_hist, marker_color=colors_hist, text=[f"{v:+.1f}%" for v in variances_hist], textposition='outside')
+            ])
+            fig2.update_layout(
+                title="",
+                xaxis_title="",
+                yaxis_title="Variantie %",
+                height=300,
+                margin=dict(t=20, b=40)
+            )
+            fig2.add_hline(y=0, line_dash="solid", line_color="#64748b", line_width=1)
+            st.plotly_chart(fig2, use_container_width=True)
+
+            st.markdown("---")
+
+            # History table
+            st.markdown("#### 📋 Detail per Periode")
+
+            for hist in CLOSING_HISTORY:
+                variance_color = "#10b981" if hist["variance_pct"] >= 0 else "#ef4444"
+                variance_icon = "↑" if hist["variance_pct"] >= 0 else "↓"
+
+                st.markdown(f"""
+                <div class="invoice-row">
+                    <div style="display: grid; grid-template-columns: 2fr 2fr 2fr 2fr 2fr 1fr; gap: 16px; align-items: center;">
+                        <div>
+                            <strong>{hist["name"]}</strong>
+                            <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">✅ Afgesloten</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <small style="color: #94a3b8;">Resultaat</small><br>
+                            <strong>{format_currency(hist["result"])}</strong>
+                        </div>
+                        <div style="text-align: right;">
+                            <small style="color: #94a3b8;">Budget</small><br>
+                            <span>{format_currency(hist["budget"])}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <small style="color: #94a3b8;">Variantie</small><br>
+                            <span style="color: {variance_color}; font-weight: 600;">{variance_icon} {hist["variance_pct"]:+.1f}%</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <small style="color: #94a3b8;">Dagen tot afsluiting</small><br>
+                            <span>{hist["days_to_close"]} dagen</span>
+                        </div>
+                        <div style="text-align: center;">
+                            <span style="background: #f1f5f9; padding: 4px 10px; border-radius: 12px; font-size: 12px;">
+                                {hist["issues_found"]} issues
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Bottom action bar
+        st.markdown("---")
+        st.markdown("### 🎯 Acties")
+
+        action_cols = st.columns(4)
+        with action_cols[0]:
+            if st.button("🔄 Synchroniseer met Odoo", key="sync_closing", use_container_width=True, type="primary"):
+                st.success("✅ Data gesynchroniseerd met Odoo")
+        with action_cols[1]:
+            if st.button("📊 Genereer Rapport", key="gen_report", use_container_width=True):
+                st.success("📄 Periode rapport gegenereerd")
+        with action_cols[2]:
+            if st.button("✉️ Stuur naar Accountant", key="send_accountant", use_container_width=True):
+                st.success("📧 Verzonden naar accountant")
+        with action_cols[3]:
+            close_disabled = pending > 0 or attention > 0 or blocked > 0
+            if st.button("🔒 Sluit Periode Af", key="close_period", use_container_width=True, disabled=close_disabled):
+                st.success("✅ Periode succesvol afgesloten!")
+            if close_disabled:
+                st.caption("⚠️ Alle taken moeten voltooid zijn")
 
     elif st.session_state.current_view == 'investments':
         st.title("🏗️ Investeringen & Financiering")
