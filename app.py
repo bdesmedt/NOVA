@@ -1009,24 +1009,24 @@ CASHFLOW_DATA = {
     "warning_buffer": 50000,
 }
 
-# Vennootschapsbelasting Data (Belgische tarieven 2025)
+# Vennootschapsbelasting Data (Nederlandse tarieven 2025)
 VPB_DATA = {
     "boekjaar": "2025",
     "fiscale_winst": 89400,
     "tarieven": {
-        # Belgische vennootschapsbelasting 2025:
-        # KMO-tarief: 20% op eerste €100.000 (mits voldaan aan voorwaarden)
-        # Standaard tarief: 25% boven €100.000
-        "schijf_1": {"grens": 100000, "percentage": 20},  # KMO-tarief
-        "schijf_2": {"grens": None, "percentage": 25}     # Standaard tarief
+        # Nederlandse vennootschapsbelasting 2025:
+        # Laag tarief: 19% tot €200.000
+        # Hoog tarief: 25,8% boven €200.000
+        "schijf_1": {"grens": 200000, "percentage": 19},
+        "schijf_2": {"grens": None, "percentage": 25.8}
     },
     "berekening": {
         "winst_voor_vpb": 89400,
         "kleinschaligheidsinvesteringsaftrek": 5200,
         "overige_fiscale_correcties": -2100,
         "belastbare_winst": 82100,
-        "vpb_schijf_1": 16420,  # 82100 * 20% (KMO-tarief)
-        "vpb_totaal": 16420
+        "vpb_schijf_1": 15599,  # 82100 * 19%
+        "vpb_totaal": 15599
     },
     "voorlopige_aanslagen": [
         {"jaar": "2024", "bedrag": 14000, "status": "Betaald", "betaaldatum": "2024-06-15"},
@@ -3351,7 +3351,7 @@ else:  # portal_mode == 'klant'
                         <td style="text-align: right; padding: 12px 0;">{format_currency(calc['winst_voor_vpb'])}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px 0; color: #10b981;">Investeringsaftrek</td>
+                        <td style="padding: 12px 0; color: #10b981;">Kleinschaligheidsinvesteringsaftrek (KIA)</td>
                         <td style="text-align: right; padding: 12px 0; color: #10b981;">- {format_currency(calc['kleinschaligheidsinvesteringsaftrek'])}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -3363,7 +3363,7 @@ else:  # portal_mode == 'klant'
                         <td style="text-align: right; padding: 12px 0;"><strong>{format_currency(calc['belastbare_winst'])}</strong></td>
                     </tr>
                     <tr>
-                        <td style="padding: 12px 0;">Vennootschapsbelasting 20% (KMO)</td>
+                        <td style="padding: 12px 0;">Vpb 19% (tot €200.000)</td>
                         <td style="text-align: right; padding: 12px 0;">{format_currency(calc['vpb_schijf_1'])}</td>
                     </tr>
                     <tr style="background: #0f172a; color: white;">
@@ -3381,7 +3381,7 @@ else:  # portal_mode == 'klant'
             <div class="metric-card" style="text-align: center;">
                 <p class="metric-label">Effectieve belastingdruk</p>
                 <p class="metric-value">{effective_rate:.1f}%</p>
-                <p style="color: #64748b; font-size: 12px;">KMO-tarief: 20%</p>
+                <p style="color: #64748b; font-size: 12px;">Nominaal tarief: 19%</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -3390,9 +3390,9 @@ else:  # portal_mode == 'klant'
             # Tarieven info
             st.markdown(f"""
             <div class="metric-card">
-                <p class="metric-label">Vennootschapsbelasting 2025</p>
-                <p><strong>20%</strong> tot €100.000 (KMO)</p>
-                <p><strong>25%</strong> boven €100.000</p>
+                <p class="metric-label">Vpb Tarieven 2025</p>
+                <p><strong>19%</strong> tot €200.000</p>
+                <p><strong>25,8%</strong> boven €200.000</p>
             </div>
             """, unsafe_allow_html=True)
         
@@ -3400,8 +3400,8 @@ else:  # portal_mode == 'klant'
         st.markdown(f"""
         <div class="agent-card agent-sage">
             <strong style="color: #f59e0b;">💡 SAGE - Fiscaal Advies</strong>
-            <p style="margin: 8px 0 0 0;">De investeringsaftrek van €5.200 is correct toegepast op basis van de investeringen in 2025.</p>
-            <p style="color: #64748b;">Als KMO geniet u van het verlaagde tarief van 20% op de eerste €100.000 winst. Overweeg strategische investeringen vóór jaareinde voor optimale fiscale planning.</p>
+            <p style="margin: 8px 0 0 0;">De KIA-aftrek van €5.200 is correct toegepast op basis van de investeringen in 2025.</p>
+            <p style="color: #64748b;">Overweeg om vóór jaareinde nog investeringen te doen - de drempel voor KIA (€2.800) is al bereikt, extra aftrek mogelijk tot €19.500 bij investeringen tot €387.580.</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -3480,7 +3480,7 @@ else:  # portal_mode == 'klant'
         with st.expander("📝 Stel direct een vraag over uw Vpb", expanded=False):
             question_type = st.selectbox(
                 "Onderwerp",
-                ["Selecteer een onderwerp...", "Investeringsaftrek", "Voorlopige aanslag aanpassen",
+                ["Selecteer een onderwerp...", "Investeringsaftrek (KIA/EIA/MIA)", "Voorlopige aanslag aanpassen",
                  "Verliesverrekening", "Tarieven & schijven", "Deadline uitstel aanvragen", "Anders"]
             )
             question_text = st.text_area("Uw vraag", placeholder="Beschrijf uw vraag of situatie...")
@@ -4288,7 +4288,7 @@ else:  # portal_mode == 'klant'
             <div class="agent-card agent-sage">
                 <strong style="color: #f59e0b;">💡 SAGE - Investeringsadvies</strong>
                 <p style="margin: 8px 0 0 0;">De afschrijvingslasten dalen in 2025 doordat de ICT Hardware volledig is afgeschreven.</p>
-                <p style="color: #64748b;">Let op: bij de geplande investering in bedrijfswagen (€45.000) komt er circa €7.500/jaar afschrijving bij. Dit beïnvloedt ook de investeringsaftrek voor de vennootschapsbelasting.</p>
+                <p style="color: #64748b;">Let op: bij de geplande investering in bedrijfswagen (€45.000) komt er circa €7.500/jaar afschrijving bij. Dit beïnvloedt ook de KIA-berekening voor de Vpb.</p>
             </div>
             """, unsafe_allow_html=True)
         
