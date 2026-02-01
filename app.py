@@ -7,8 +7,8 @@ import random
 
 # Page config
 st.set_page_config(
-    page_title="NOVA Platform Demo",
-    page_icon="🔮",
+    page_title="FID Finance Platform",
+    page_icon="💎",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -250,38 +250,111 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     }
 
-    /* Enhanced alert cards with better urgency indicators */
+    /* Enhanced alert cards with modern design */
     .alert-card {
-        background: linear-gradient(to right, #fef3c7, #fffbeb);
-        border: 1px solid #f59e0b;
-        border-left: 4px solid #f59e0b;
-        border-radius: 12px;
-        padding: 18px 20px;
-        margin: 10px 0;
-        transition: all 0.2s ease;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border: none;
+        border-left: 5px solid #f59e0b;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin: 12px 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(245,158,11,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .alert-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(245,158,11,0.05) 0%, transparent 100%);
+        pointer-events: none;
     }
 
     .alert-card:hover {
-        transform: translateX(4px);
-        box-shadow: 0 4px 16px rgba(245,158,11,0.15);
+        transform: translateX(8px) scale(1.01);
+        box-shadow: 0 8px 24px rgba(245,158,11,0.2);
     }
 
     .alert-card-red {
-        background: linear-gradient(to right, #fee2e2, #fef2f2);
-        border: 1px solid #ef4444;
-        border-left: 4px solid #ef4444;
-        animation: alertPulse 3s infinite;
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border-left: 5px solid #ef4444;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+        animation: urgentPulse 2s ease-in-out infinite;
     }
 
-    @keyframes alertPulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        50% { box-shadow: 0 0 20px 2px rgba(239, 68, 68, 0.1); }
+    .alert-card-red::before {
+        background: linear-gradient(135deg, rgba(239,68,68,0.05) 0%, transparent 100%);
+    }
+
+    .alert-card-red:hover {
+        box-shadow: 0 8px 24px rgba(239, 68, 68, 0.25);
+    }
+
+    @keyframes urgentPulse {
+        0%, 100% {
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+            border-left-color: #ef4444;
+        }
+        50% {
+            box-shadow: 0 4px 24px rgba(239, 68, 68, 0.35);
+            border-left-color: #dc2626;
+        }
     }
 
     .alert-card-info {
-        background: linear-gradient(to right, #dbeafe, #eff6ff);
-        border: 1px solid #3b82f6;
-        border-left: 4px solid #3b82f6;
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-left: 5px solid #3b82f6;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.1);
+    }
+
+    .alert-card-info::before {
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, transparent 100%);
+    }
+
+    .alert-card-info:hover {
+        box-shadow: 0 8px 24px rgba(59,130,246,0.2);
+    }
+
+    /* Alert badge styling */
+    .alert-badge-urgent {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    .alert-badge-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+
+    .alert-badge-info {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
 
     h1, h2, h3 { color: #0f172a; }
@@ -474,7 +547,7 @@ if 'selected_deal' not in st.session_state:
 # ============================================
 
 FIRM_INFO = {
-    "name": "NOVA Partners",
+    "name": "FID Finance",
     "location": "Amsterdam",
     "employees": 12,
     "clients": 45
@@ -681,17 +754,24 @@ AI_AGENTS = {
     }
 }
 
-# Demo Invoices (client-level)
+# Demo Invoices (client-level) with bank details for payment integration
 DEMO_INVOICES = [
-    {"id": "F2024-001", "supplier": "Bouwmaterialen Jansen B.V.", "amount": 4750.00, "vat": 997.50, "date": "2024-01-15", "status": "verwerkt", "category": "Inkoop materialen", "rgs": "WIkworGro", "odoo_po": "PO2024-042"},
-    {"id": "F2024-002", "supplier": "Transport De Vries", "amount": 1250.00, "vat": 262.50, "date": "2024-01-16", "status": "verwerkt", "category": "Transport", "rgs": "WKprUitTra", "odoo_po": "PO2024-038"},
-    {"id": "F2024-003", "supplier": "Energie Direct", "amount": 892.50, "vat": 187.43, "date": "2024-01-17", "status": "verwerkt", "category": "Energie", "rgs": "WBehHuiEne", "odoo_po": None},
-    {"id": "F2024-004", "supplier": "Kraan & Hijswerk Utrecht", "amount": 3200.00, "vat": 672.00, "date": "2024-01-18", "status": "wacht op review", "category": "Ingehuurde diensten", "rgs": "WKprUitInh", "odoo_po": "PO2024-045"},
-    {"id": "F2024-005", "supplier": "Sanitair Groothandel NL", "amount": 2180.00, "vat": 457.80, "date": "2024-01-19", "status": "nieuw", "category": "Inkoop materialen", "rgs": "WIkworGro", "odoo_po": "PO2024-047"},
-    {"id": "F2024-006", "supplier": "Verzekeringen Centraal", "amount": 1450.00, "vat": 0.00, "date": "2024-01-20", "status": "nieuw", "category": "Verzekeringen", "rgs": "WBehVerBed", "odoo_po": None},
-    {"id": "F2024-007", "supplier": "ICT Solutions Partner", "amount": 599.00, "vat": 125.79, "date": "2024-01-21", "status": "nieuw", "category": "Automatisering", "rgs": "WBehAutSof", "odoo_po": None},
-    {"id": "F2024-008", "supplier": "Houthandel Rotterdam", "amount": 6420.00, "vat": 1348.20, "date": "2024-01-22", "status": "nieuw", "category": "Inkoop materialen", "rgs": "WIkworGro", "odoo_po": "PO2024-051"},
+    {"id": "F2024-001", "supplier": "Bouwmaterialen Jansen B.V.", "amount": 4750.00, "vat": 997.50, "date": "2024-01-15", "due_date": "2024-02-15", "status": "verwerkt", "payment_status": "betaald", "category": "Inkoop materialen", "rgs": "WIkworGro", "odoo_po": "PO2024-042", "iban": "NL91ABNA0417164300", "bic": "ABNANL2A"},
+    {"id": "F2024-002", "supplier": "Transport De Vries", "amount": 1250.00, "vat": 262.50, "date": "2024-01-16", "due_date": "2024-02-16", "status": "verwerkt", "payment_status": "betaald", "category": "Transport", "rgs": "WKprUitTra", "odoo_po": "PO2024-038", "iban": "NL20INGB0001234567", "bic": "INGBNL2A"},
+    {"id": "F2024-003", "supplier": "Energie Direct", "amount": 892.50, "vat": 187.43, "date": "2024-01-17", "due_date": "2024-02-17", "status": "verwerkt", "payment_status": "betaald", "category": "Energie", "rgs": "WBehHuiEne", "odoo_po": None, "iban": "NL44RABO0123456789", "bic": "RABONL2U"},
+    {"id": "F2024-004", "supplier": "Kraan & Hijswerk Utrecht", "amount": 3200.00, "vat": 672.00, "date": "2024-01-18", "due_date": "2024-02-18", "status": "wacht op review", "payment_status": "openstaand", "category": "Ingehuurde diensten", "rgs": "WKprUitInh", "odoo_po": "PO2024-045", "iban": "NL89ABNA0574908765", "bic": "ABNANL2A"},
+    {"id": "F2024-005", "supplier": "Sanitair Groothandel NL", "amount": 2180.00, "vat": 457.80, "date": "2024-01-19", "due_date": "2024-02-19", "status": "nieuw", "payment_status": "openstaand", "category": "Inkoop materialen", "rgs": "WIkworGro", "odoo_po": "PO2024-047", "iban": "NL56INGB0987654321", "bic": "INGBNL2A"},
+    {"id": "F2024-006", "supplier": "Verzekeringen Centraal", "amount": 1450.00, "vat": 0.00, "date": "2024-01-20", "due_date": "2024-02-20", "status": "nieuw", "payment_status": "openstaand", "category": "Verzekeringen", "rgs": "WBehVerBed", "odoo_po": None, "iban": "NL27RABO0345678901", "bic": "RABONL2U"},
+    {"id": "F2024-007", "supplier": "ICT Solutions Partner", "amount": 599.00, "vat": 125.79, "date": "2024-01-21", "due_date": "2024-02-21", "status": "nieuw", "payment_status": "openstaand", "category": "Automatisering", "rgs": "WBehAutSof", "odoo_po": None, "iban": "NL18ABNA0123789456", "bic": "ABNANL2A"},
+    {"id": "F2024-008", "supplier": "Houthandel Rotterdam", "amount": 6420.00, "vat": 1348.20, "date": "2024-01-22", "due_date": "2024-02-22", "status": "nieuw", "payment_status": "openstaand", "category": "Inkoop materialen", "rgs": "WIkworGro", "odoo_po": "PO2024-051", "iban": "NL62INGB0567891234", "bic": "INGBNL2A"},
 ]
+
+# Bank accounts for payment integration
+BANK_ACCOUNTS = {
+    "main": {"name": "Hoofdrekening", "bank": "ING", "iban": "NL45INGB0123456789", "balance": 87500.00, "type": "Zakelijke rekening"},
+    "savings": {"name": "Spaarrekening", "bank": "ABN AMRO", "iban": "NL82ABNA0987654321", "balance": 150000.00, "type": "Zakelijke spaarrekening"},
+    "credit": {"name": "Kredietlijn", "bank": "Rabobank", "iban": "NL33RABO0246813579", "balance": -15000.00, "limit": 100000.00, "type": "Zakelijk krediet"},
+}
 
 # Odoo CRM Pipeline Data
 ODOO_CRM_PIPELINE = [
@@ -1042,18 +1122,25 @@ def nav_button(label, view, key_prefix, current_view):
         return st.button(label, key=f"{key_prefix}_{view}", use_container_width=True)
 
 with st.sidebar:
-    # Enhanced logo with animation
+    # FID Finance logo with brand colors
     st.markdown("""
-    <div style="text-align: center; padding: 24px 0;">
+    <div style="text-align: center; padding: 20px 0;">
         <div style="display: inline-block; position: relative;">
-            <h1 style="color: #14b8a6; font-size: 36px; margin: 0; font-weight: 700;
-                       background: linear-gradient(135deg, #14b8a6, #0d9488);
-                       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-                       text-shadow: none;">NOVA</h1>
+            <!-- FID Finance Diamond Logo -->
+            <svg width="60" height="60" viewBox="0 0 100 100" style="margin-bottom: 8px;">
+                <!-- Navy Blue F-shape (top-left) -->
+                <polygon points="50,5 95,50 50,50 50,35 65,35 65,50 50,50 5,50 50,5" fill="#2C3E50"/>
+                <!-- Gold Checkmark (bottom-right) -->
+                <polygon points="50,50 95,50 50,95 35,80 50,65 50,50" fill="#F1C40F"/>
+                <polygon points="50,65 35,80 50,95 65,80 50,65" fill="#F1C40F"/>
+            </svg>
+            <h1 style="color: #2C3E50; font-size: 28px; margin: 0; font-weight: 700; letter-spacing: -0.5px;">
+                FID <span style="color: #F1C40F;">Finance</span>
+            </h1>
             <div style="position: absolute; top: -4px; right: -12px; width: 8px; height: 8px;
                         background: #10b981; border-radius: 50%; animation: pulse 2s infinite;"></div>
         </div>
-        <p style="color: #64748b; font-size: 12px; margin: 8px 0 0 0; letter-spacing: 1px;">PLATFORM DEMO</p>
+        <p style="color: #64748b; font-size: 11px; margin: 8px 0 0 0; letter-spacing: 2px; text-transform: uppercase;">Financial Intelligence Dashboard</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1165,6 +1252,7 @@ with st.sidebar:
         nav_options = {
             "🎯 Dashboard": "dashboard",
             "📄 Facturen": "invoices",
+            "💳 Betalingen": "payments",
             "📊 Winst & Verlies": "pnl",
             "⚖️ Balans": "balance",
             "🏗️ Investeringen": "investments",
@@ -1254,32 +1342,62 @@ if st.session_state.portal_mode == 'kantoor':
         col_left, col_right = st.columns([1, 1])
 
         with col_left:
-            render_section_header("🚨 Actieve Alerts", f"{len(FIRM_ALERTS)} actieve meldingen")
+            # Enhanced Alert Section Header
+            st.markdown(f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <h3 style="margin: 0; color: #0f172a; font-size: 18px;">🚨 Actieve Alerts</h3>
+                    <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0;">{len(FIRM_ALERTS)} actieve meldingen vereisen uw aandacht</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <span class="alert-badge-urgent">{len([a for a in FIRM_ALERTS if a['type'] == 'urgent'])} Urgent</span>
+                    <span class="alert-badge-warning">{len([a for a in FIRM_ALERTS if a['type'] == 'warning'])} Attentie</span>
+                    <span class="alert-badge-info">{len([a for a in FIRM_ALERTS if a['type'] == 'info'])} Info</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
             for alert in FIRM_ALERTS[:4]:
                 if alert['type'] == 'urgent':
                     alert_class = "alert-card-red"
                     icon = "🔴"
-                    priority_badge = '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-left: 8px;">URGENT</span>'
+                    priority_badge = '<span class="alert-badge-urgent">URGENT</span>'
+                    action_text = "Direct actie vereist"
+                    icon_bg = "#fee2e2"
                 elif alert['type'] == 'warning':
                     alert_class = "alert-card"
                     icon = "⚠️"
-                    priority_badge = '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-left: 8px;">ATTENTIE</span>'
+                    priority_badge = '<span class="alert-badge-warning">ATTENTIE</span>'
+                    action_text = "Actie binnen 5 dagen"
+                    icon_bg = "#fef3c7"
                 else:
                     alert_class = "alert-card-info"
                     icon = "ℹ️"
-                    priority_badge = '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-left: 8px;">INFO</span>'
+                    priority_badge = '<span class="alert-badge-info">INFO</span>'
+                    action_text = "Ter kennisname"
+                    icon_bg = "#dbeafe"
 
                 st.markdown(f"""
                 <div class="{alert_class}">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <strong style="display: flex; align-items: center; gap: 6px;">
-                                {icon} {alert['client']} {priority_badge}
-                            </strong>
-                            <p style="color: #475569; margin: 8px 0 4px 0; font-size: 14px;">{alert['message']}</p>
-                            <small style="color: #94a3b8; display: flex; align-items: center; gap: 4px;">
-                                <span>🕐</span> {alert['time']}
-                            </small>
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="min-width: 44px; height: 44px; background: {icon_bg}; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            {icon}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <strong style="color: #0f172a; font-size: 15px;">{alert['client']}</strong>
+                                    <span style="margin-left: 10px;">{priority_badge}</span>
+                                </div>
+                                <small style="color: #94a3b8; display: flex; align-items: center; gap: 4px; font-size: 12px;">
+                                    🕐 {alert['time']}
+                                </small>
+                            </div>
+                            <p style="color: #475569; margin: 8px 0; font-size: 14px; line-height: 1.5;">{alert['message']}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                                <span style="color: #64748b; font-size: 12px; font-style: italic;">{action_text}</span>
+                                <a href="#" style="color: #14b8a6; font-size: 13px; font-weight: 600; text-decoration: none;">Bekijk details →</a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1530,43 +1648,125 @@ if st.session_state.portal_mode == 'kantoor':
             st.metric("Teamleden Overbelast", overloaded)
     
     elif st.session_state.current_view == 'alerts':
-        # ALERTS & ACTIES
-        st.title("🚨 Alerts & Acties")
-        
-        # Alert summary
+        # ALERTS & ACTIES - Enhanced Design
+        st.markdown("""
+        <div style="margin-bottom: 24px;">
+            <h1 style="color: #0f172a; margin: 0; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 32px;">🚨</span> Alerts & Acties
+            </h1>
+            <p style="color: #64748b; font-size: 15px; margin: 8px 0 0 0;">
+                Overzicht van alle meldingen die uw aandacht vereisen
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Alert summary with enhanced cards
         urgent = len([a for a in FIRM_ALERTS if a['type'] == 'urgent'])
         warning = len([a for a in FIRM_ALERTS if a['type'] == 'warning'])
         info = len([a for a in FIRM_ALERTS if a['type'] == 'info'])
-        
-        col1, col2, col3 = st.columns(3)
+
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("🔴 Urgent", urgent)
+            st.markdown(f"""
+            <div class="metric-card" style="border-left: 5px solid #ef4444; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);">
+                <p class="metric-label" style="color: #dc2626;">URGENT</p>
+                <p class="metric-value" style="color: #dc2626;">{urgent}</p>
+                <p style="color: #64748b; font-size: 12px; margin-top: 8px;">Direct actie vereist</p>
+            </div>
+            """, unsafe_allow_html=True)
         with col2:
-            st.metric("🟡 Waarschuwing", warning)
+            st.markdown(f"""
+            <div class="metric-card" style="border-left: 5px solid #f59e0b; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);">
+                <p class="metric-label" style="color: #d97706;">ATTENTIE</p>
+                <p class="metric-value" style="color: #d97706;">{warning}</p>
+                <p style="color: #64748b; font-size: 12px; margin-top: 8px;">Binnen 5 dagen oplossen</p>
+            </div>
+            """, unsafe_allow_html=True)
         with col3:
-            st.metric("🔵 Informatief", info)
-        
+            st.markdown(f"""
+            <div class="metric-card" style="border-left: 5px solid #3b82f6; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+                <p class="metric-label" style="color: #2563eb;">INFORMATIEF</p>
+                <p class="metric-value" style="color: #2563eb;">{info}</p>
+                <p style="color: #64748b; font-size: 12px; margin-top: 8px;">Ter kennisname</p>
+            </div>
+            """, unsafe_allow_html=True)
+        with col4:
+            st.markdown(f"""
+            <div class="metric-card" style="border-left: 5px solid #10b981;">
+                <p class="metric-label">TOTAAL ACTIEF</p>
+                <p class="metric-value">{len(FIRM_ALERTS)}</p>
+                <p style="color: #64748b; font-size: 12px; margin-top: 8px;">Meldingen</p>
+            </div>
+            """, unsafe_allow_html=True)
+
         st.markdown("---")
-        
-        # Alert list
-        for alert in FIRM_ALERTS:
-            alert_class = "alert-card-red" if alert['type'] == 'urgent' else "alert-card"
-            icon = "🔴" if alert['type'] == 'urgent' else "🟡" if alert['type'] == 'warning' else "🔵"
-            
-            col1, col2 = st.columns([4, 1])
+
+        # Filter tabs
+        alert_filter = st.radio("Filter", ["Alle", "🔴 Urgent", "🟡 Attentie", "🔵 Info"], horizontal=True, label_visibility="collapsed")
+
+        filtered_alerts = FIRM_ALERTS
+        if alert_filter == "🔴 Urgent":
+            filtered_alerts = [a for a in FIRM_ALERTS if a['type'] == 'urgent']
+        elif alert_filter == "🟡 Attentie":
+            filtered_alerts = [a for a in FIRM_ALERTS if a['type'] == 'warning']
+        elif alert_filter == "🔵 Info":
+            filtered_alerts = [a for a in FIRM_ALERTS if a['type'] == 'info']
+
+        st.markdown(f"<p style='color: #64748b; margin: 16px 0;'>Toont {len(filtered_alerts)} van {len(FIRM_ALERTS)} meldingen</p>", unsafe_allow_html=True)
+
+        # Enhanced Alert list
+        for alert in filtered_alerts:
+            if alert['type'] == 'urgent':
+                alert_class = "alert-card-red"
+                icon = "🔴"
+                priority_badge = '<span class="alert-badge-urgent">URGENT</span>'
+                action_text = "Direct actie vereist"
+                icon_bg = "#fee2e2"
+            elif alert['type'] == 'warning':
+                alert_class = "alert-card"
+                icon = "⚠️"
+                priority_badge = '<span class="alert-badge-warning">ATTENTIE</span>'
+                action_text = "Actie binnen 5 dagen"
+                icon_bg = "#fef3c7"
+            else:
+                alert_class = "alert-card-info"
+                icon = "ℹ️"
+                priority_badge = '<span class="alert-badge-info">INFO</span>'
+                action_text = "Ter kennisname"
+                icon_bg = "#dbeafe"
+
+            col1, col2 = st.columns([5, 1])
             with col1:
                 st.markdown(f"""
                 <div class="{alert_class}">
-                    <strong>{icon} {alert['client']}</strong><br>
-                    <span>{alert['message']}</span><br>
-                    <small style="color: #94a3b8;">{alert['time']}</small>
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="min-width: 48px; height: 48px; background: {icon_bg}; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                            {icon}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <strong style="color: #0f172a; font-size: 16px;">{alert['client']}</strong>
+                                    <span style="margin-left: 12px;">{priority_badge}</span>
+                                </div>
+                                <small style="color: #94a3b8; display: flex; align-items: center; gap: 4px; font-size: 12px;">
+                                    🕐 {alert['time']}
+                                </small>
+                            </div>
+                            <p style="color: #475569; margin: 10px 0; font-size: 15px; line-height: 1.5;">{alert['message']}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06);">
+                                <span style="color: #64748b; font-size: 12px; font-style: italic;">⏱️ {action_text}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
             with col2:
+                st.markdown("<br>", unsafe_allow_html=True)
                 # Find the client and go to their dashboard
                 for c in DEMO_CLIENTS:
                     if c['name'] == alert['client']:
-                        if st.button("Bekijk →", key=f"alert_{alert['client']}_{alert['time']}", use_container_width=True):
+                        if st.button("Bekijk Klant →", key=f"alert_{alert['client']}_{alert['time']}", use_container_width=True, type="primary"):
                             st.session_state.selected_client = c['id']
                             st.session_state.portal_mode = 'klant'
                             st.session_state.current_view = 'dashboard'
@@ -1846,6 +2046,182 @@ else:  # portal_mode == 'klant'
             show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'wacht op review'], "review")
         with tab3:
             show_invoice_list([i for i in DEMO_INVOICES if i['status'] == 'verwerkt'], "processed")
+
+    elif st.session_state.current_view == 'payments':
+        # INTEGRATED PAYMENT PLATFORM
+        st.title("💳 Betalingsplatform")
+        st.markdown(f"**{current_client['name']}** | Geïntegreerd bankieren")
+
+        # Bank account overview
+        st.markdown("### 🏦 Uw Bankrekeningen")
+        bank_cols = st.columns(3)
+
+        for idx, (key, account) in enumerate(BANK_ACCOUNTS.items()):
+            with bank_cols[idx]:
+                balance_color = "#10b981" if account['balance'] >= 0 else "#ef4444"
+                st.markdown(f"""
+                <div class="metric-card" style="border-left: 4px solid {balance_color};">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <p class="metric-label">{account['name']}</p>
+                            <p class="metric-value" style="color: {balance_color};">{format_currency(account['balance'])}</p>
+                            <p style="color: #64748b; font-size: 12px; margin-top: 8px;">
+                                🏛️ {account['bank']}<br>
+                                <span style="font-family: monospace; font-size: 11px;">{account['iban']}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # Outstanding invoices for payment
+        st.markdown("### 📋 Openstaande Facturen - Klaar voor Betaling")
+
+        outstanding_invoices = [inv for inv in DEMO_INVOICES if inv.get('payment_status') == 'openstaand']
+        total_outstanding = sum(inv['amount'] + inv['vat'] for inv in outstanding_invoices)
+
+        # Summary metrics
+        metric_cols = st.columns(4)
+        with metric_cols[0]:
+            st.metric("Openstaande Facturen", len(outstanding_invoices))
+        with metric_cols[1]:
+            st.metric("Totaal Openstaand", format_currency(total_outstanding))
+        with metric_cols[2]:
+            overdue = len([inv for inv in outstanding_invoices if inv['due_date'] < datetime.now().strftime('%Y-%m-%d')])
+            st.metric("Verlopen", overdue, delta="actie vereist" if overdue > 0 else None, delta_color="inverse")
+        with metric_cols[3]:
+            st.metric("Beschikbaar Saldo", format_currency(BANK_ACCOUNTS['main']['balance']))
+
+        st.markdown("")
+
+        # Initialize session state for selected payments
+        if 'selected_payments' not in st.session_state:
+            st.session_state.selected_payments = []
+
+        # Payment selection table header
+        st.markdown("""
+        <div style="display: grid; grid-template-columns: 40px 2fr 3fr 2fr 2fr 2fr 1.5fr; gap: 12px; padding: 12px 16px;
+                    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 10px 10px 0 0; color: white;">
+            <span style="font-size: 11px; font-weight: 600;">✓</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Factuur</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Leverancier</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Bedrag</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Vervaldatum</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase;">IBAN</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Status</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Payment rows with checkboxes
+        for inv in outstanding_invoices:
+            total_amount = inv['amount'] + inv['vat']
+            is_overdue = inv['due_date'] < datetime.now().strftime('%Y-%m-%d')
+            status_badge = '<span style="background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 12px; font-size: 10px;">VERLOPEN</span>' if is_overdue else '<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 10px;">OPEN</span>'
+            row_bg = "#fff5f5" if is_overdue else "#ffffff"
+
+            col1, col2, col3, col4, col5, col6, col7 = st.columns([0.5, 2, 3, 2, 2, 2, 1.5])
+
+            with col1:
+                selected = st.checkbox("", key=f"pay_{inv['id']}", label_visibility="collapsed")
+                if selected and inv['id'] not in st.session_state.selected_payments:
+                    st.session_state.selected_payments.append(inv['id'])
+                elif not selected and inv['id'] in st.session_state.selected_payments:
+                    st.session_state.selected_payments.remove(inv['id'])
+
+            with col2:
+                st.markdown(f"**{inv['id']}**")
+            with col3:
+                st.markdown(f"{inv['supplier']}")
+            with col4:
+                st.markdown(f"**{format_currency(total_amount)}**")
+            with col5:
+                st.markdown(f"{'🔴 ' if is_overdue else ''}{inv['due_date']}")
+            with col6:
+                st.markdown(f"<span style='font-family: monospace; font-size: 11px;'>{inv['iban'][:12]}...</span>", unsafe_allow_html=True)
+            with col7:
+                st.markdown(status_badge, unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # Payment action section
+        selected_count = len(st.session_state.selected_payments)
+        selected_total = sum(inv['amount'] + inv['vat'] for inv in outstanding_invoices if inv['id'] in st.session_state.selected_payments)
+
+        st.markdown("### 💸 Betaling Uitvoeren")
+
+        pay_cols = st.columns([2, 2, 1])
+
+        with pay_cols[0]:
+            st.markdown(f"""
+            <div class="metric-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #10b981;">
+                <p style="color: #166534; font-size: 12px; font-weight: 600; margin-bottom: 4px;">GESELECTEERD VOOR BETALING</p>
+                <p style="font-size: 28px; font-weight: 700; color: #166534; margin: 0;">{selected_count} facturen</p>
+                <p style="font-size: 18px; color: #166534; margin-top: 4px;">Totaal: {format_currency(selected_total)}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with pay_cols[1]:
+            source_account = st.selectbox(
+                "Betalen vanaf rekening",
+                options=[f"{acc['name']} ({acc['iban']}) - {format_currency(acc['balance'])}" for acc in BANK_ACCOUNTS.values()],
+                key="payment_source"
+            )
+
+            payment_date = st.date_input("Betaaldatum", value=datetime.now(), key="payment_date")
+
+        with pay_cols[2]:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🏦 Betaling Uitvoeren", type="primary", use_container_width=True, disabled=selected_count == 0):
+                st.success(f"✅ Betaalopdracht voor {selected_count} facturen ({format_currency(selected_total)}) is verzonden naar uw bank!")
+                st.balloons()
+                st.session_state.selected_payments = []
+
+            if st.button("📥 SEPA Batch Downloaden", use_container_width=True, disabled=selected_count == 0):
+                st.info("📄 SEPA XML bestand gegenereerd en gedownload")
+
+        # Payment instructions / Bank integration info
+        st.markdown("---")
+        st.markdown("### 🔗 Bank Integratie Status")
+
+        integration_cols = st.columns(3)
+        with integration_cols[0]:
+            st.markdown("""
+            <div class="metric-card" style="border-left: 4px solid #10b981;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">🟢</span>
+                    <div>
+                        <strong>ING Business</strong>
+                        <p style="color: #64748b; font-size: 12px; margin: 0;">PSD2 Connected • Real-time</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        with integration_cols[1]:
+            st.markdown("""
+            <div class="metric-card" style="border-left: 4px solid #10b981;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">🟢</span>
+                    <div>
+                        <strong>ABN AMRO</strong>
+                        <p style="color: #64748b; font-size: 12px; margin: 0;">PSD2 Connected • Real-time</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        with integration_cols[2]:
+            st.markdown("""
+            <div class="metric-card" style="border-left: 4px solid #10b981;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">🟢</span>
+                    <div>
+                        <strong>Rabobank</strong>
+                        <p style="color: #64748b; font-size: 12px; margin: 0;">PSD2 Connected • Real-time</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     elif st.session_state.current_view == 'pnl':
         st.title("📊 Winst & Verlies")
@@ -2687,8 +3063,60 @@ else:  # portal_mode == 'klant'
             </div>
             """, unsafe_allow_html=True)
         
-        # Action buttons
+        # Call-to-Action Section for Fiscal Advisor
         st.markdown("---")
+        st.markdown("### 📞 Fiscaal Advies Nodig?")
+
+        # Prominent CTA Card
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 16px; padding: 28px; margin: 16px 0; box-shadow: 0 8px 32px rgba(245,158,11,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div style="flex: 1; min-width: 280px;">
+                    <h3 style="color: white; margin: 0 0 8px 0; font-size: 22px;">🏛️ Vraag over uw Vennootschapsbelasting?</h3>
+                    <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 15px;">
+                        Onze fiscalisten helpen u graag met optimalisatie, deadlines en strategische planning.
+                    </p>
+                    <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 13px;">
+                        <strong>Emma de Groot</strong> - Fiscalist | Specialisatie: Vennootschapsbelasting & Investeringsaftrek
+                    </p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        cta_cols = st.columns([1, 1, 1])
+        with cta_cols[0]:
+            if st.button("📞 Bel Direct: +31 20 123 4567", key="vpb_call", use_container_width=True, type="primary"):
+                st.info("📞 Verbinding wordt gemaakt met Emma de Groot...")
+        with cta_cols[1]:
+            if st.button("📅 Plan Afspraak met Fiscalist", key="vpb_schedule", use_container_width=True, type="primary"):
+                st.success("📅 Afspraakverzoek verzonden! U ontvangt binnen 24 uur een bevestiging.")
+        with cta_cols[2]:
+            if st.button("💬 Chat met Fiscaal Team", key="vpb_chat", use_container_width=True, type="primary"):
+                st.session_state.current_view = 'chat'
+                st.rerun()
+
+        # Quick question form
+        st.markdown("")
+        with st.expander("📝 Stel direct een vraag over uw Vpb", expanded=False):
+            question_type = st.selectbox(
+                "Onderwerp",
+                ["Selecteer een onderwerp...", "Investeringsaftrek (KIA/EIA/MIA)", "Voorlopige aanslag aanpassen",
+                 "Verliesverrekening", "Tarieven & schijven", "Deadline uitstel aanvragen", "Anders"]
+            )
+            question_text = st.text_area("Uw vraag", placeholder="Beschrijf uw vraag of situatie...")
+            urgency = st.radio("Urgentie", ["Normaal (binnen 2 werkdagen)", "Urgent (binnen 24 uur)", "Spoed (vandaag)"], horizontal=True)
+
+            if st.button("📤 Vraag Versturen", key="vpb_question_submit", type="primary"):
+                if question_text:
+                    st.success("✅ Uw vraag is verzonden naar het fiscaal team. U ontvangt binnen " +
+                              ("2 werkdagen" if "Normaal" in urgency else "24 uur" if "Urgent" in urgency else "enkele uren") + " een reactie.")
+                else:
+                    st.warning("⚠️ Vul eerst uw vraag in")
+
+        st.markdown("---")
+
+        # Standard action buttons
         col1, col2 = st.columns(2)
         with col1:
             if st.button("📊 Vpb Prognose updaten", key="vpb_prognose", use_container_width=True):
