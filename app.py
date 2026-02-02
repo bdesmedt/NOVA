@@ -4335,6 +4335,14 @@ else:  # portal_mode == 'klant'
                     agent_color = AI_AGENTS.get(item["responsible_agent"], {}).get("color", "#64748b")
                     automated_badge = '<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 8px;">AUTO</span>' if item["automated"] else ""
 
+                    completion_html = ""
+                    if item["completion_date"]:
+                        completion_html = f'<span style="color: #64748b; font-size: 11px;">Voltooid: {item["completion_date"]}</span>'
+
+                    notes_html = ""
+                    if item["notes"]:
+                        notes_html = f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {item["notes"]}</p>'
+
                     st.markdown(f"""
                     <div class="invoice-row" style="border-left: 4px solid {status_border}; background: {status_bg};">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -4349,9 +4357,9 @@ else:  # portal_mode == 'klant'
                                 <div style="margin-top: 8px; display: flex; gap: 16px; align-items: center;">
                                     <span style="color: {agent_color}; font-weight: 600; font-size: 12px;">Agent: {item["responsible_agent"]}</span>
                                     <span class="odoo-badge" style="font-size: 10px;">{item["odoo_module"]}</span>
-                                    {f'<span style="color: #64748b; font-size: 11px;">Voltooid: {item["completion_date"]}</span>' if item["completion_date"] else ""}
+                                    {completion_html}
                                 </div>
-                                {f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {item["notes"]}</p>' if item["notes"] else ""}
+                                {notes_html}
                             </div>
                             <div style="text-align: right; min-width: 120px;">
                                 <span style="background: {status_border}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">{status_text}</span>
@@ -5326,6 +5334,14 @@ else:  # portal_mode == 'klant'
                     agent_name = item.get("responsible_agent", "Handmatig") or "Handmatig"
                     automated_badge = '<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 8px;">AUTO</span>' if item.get("automated") else ""
 
+                    completion_html = ""
+                    if item.get("completion_date"):
+                        completion_html = f'<span style="color: #64748b; font-size: 11px;">Voltooid: {item.get("completion_date")}</span>'
+
+                    notes_html = ""
+                    if item.get("notes"):
+                        notes_html = f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {item.get("notes")}</p>'
+
                     st.markdown(f"""
                     <div class="invoice-row" style="border-left: 4px solid {status_border}; background: {status_bg};">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -5339,9 +5355,9 @@ else:  # portal_mode == 'klant'
                                 </div>
                                 <div style="margin-top: 8px; display: flex; gap: 16px; align-items: center;">
                                     <span style="color: {agent_color}; font-weight: 600; font-size: 12px;">Agent: {agent_name}</span>
-                                    {f'<span style="color: #64748b; font-size: 11px;">Voltooid: {item.get("completion_date", "")}</span>' if item.get("completion_date") else ""}
+                                    {completion_html}
                                 </div>
-                                {f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {item.get("notes", "")}</p>' if item.get("notes") else ""}
+                                {notes_html}
                             </div>
                             <div style="text-align: right; min-width: 120px;">
                                 <span style="background: {status_border}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">{status_text}</span>
