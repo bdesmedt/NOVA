@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import random
+import html
 
 # Page config
 st.set_page_config(
@@ -4335,13 +4336,18 @@ else:  # portal_mode == 'klant'
                     agent_color = AI_AGENTS.get(item["responsible_agent"], {}).get("color", "#64748b")
                     automated_badge = '<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 8px;">AUTO</span>' if item["automated"] else ""
 
+                    # Escape HTML entities in user content
+                    task_escaped = html.escape(item["task"])
+                    desc_escaped = html.escape(item["description"])
+
                     completion_html = ""
                     if item["completion_date"]:
-                        completion_html = f'<span style="color: #64748b; font-size: 11px;">Voltooid: {item["completion_date"]}</span>'
+                        completion_html = f'<span style="color: #64748b; font-size: 11px;">Voltooid: {html.escape(str(item["completion_date"]))}</span>'
 
                     notes_html = ""
                     if item["notes"]:
-                        notes_html = f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {item["notes"]}</p>'
+                        notes_escaped = html.escape(item["notes"])
+                        notes_html = f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {notes_escaped}</p>'
 
                     st.markdown(f"""
                     <div class="invoice-row" style="border-left: 4px solid {status_border}; background: {status_bg};">
@@ -4350,8 +4356,8 @@ else:  # portal_mode == 'klant'
                                 <div style="display: flex; align-items: center; gap: 12px;">
                                     <span style="font-size: 18px;">{status_icon}</span>
                                     <div>
-                                        <strong style="color: #0f172a;">{item["task"]}</strong>{automated_badge}
-                                        <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">{item["description"]}</p>
+                                        <strong style="color: #0f172a;">{task_escaped}</strong>{automated_badge}
+                                        <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">{desc_escaped}</p>
                                     </div>
                                 </div>
                                 <div style="margin-top: 8px; display: flex; gap: 16px; align-items: center;">
@@ -5119,7 +5125,7 @@ else:  # portal_mode == 'klant'
             """, unsafe_allow_html=True)
 
         # Main tabs
-        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 Overzicht", "📋 Checklist", "📈 Balans", "💰 W&V", "✅ Goedkeuring", "📤 KvK Indiening"])
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["📊 Overzicht", "📋 Checklist", "📈 Balans", "💰 W&V", "📝 Toelichting", "✅ Goedkeuring", "📤 KvK Indiening"])
 
         with tab1:
             st.markdown("### 📊 Jaarrekening Overzicht")
@@ -5334,13 +5340,18 @@ else:  # portal_mode == 'klant'
                     agent_name = item.get("responsible_agent", "Handmatig") or "Handmatig"
                     automated_badge = '<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 8px;">AUTO</span>' if item.get("automated") else ""
 
+                    # Escape HTML entities in user content
+                    task_escaped = html.escape(item["task"])
+                    desc_escaped = html.escape(item["description"])
+
                     completion_html = ""
                     if item.get("completion_date"):
-                        completion_html = f'<span style="color: #64748b; font-size: 11px;">Voltooid: {item.get("completion_date")}</span>'
+                        completion_html = f'<span style="color: #64748b; font-size: 11px;">Voltooid: {html.escape(str(item.get("completion_date")))}</span>'
 
                     notes_html = ""
                     if item.get("notes"):
-                        notes_html = f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {item.get("notes")}</p>'
+                        notes_escaped = html.escape(item.get("notes"))
+                        notes_html = f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {notes_escaped}</p>'
 
                     st.markdown(f"""
                     <div class="invoice-row" style="border-left: 4px solid {status_border}; background: {status_bg};">
@@ -5349,8 +5360,8 @@ else:  # portal_mode == 'klant'
                                 <div style="display: flex; align-items: center; gap: 12px;">
                                     <span style="font-size: 18px;">{status_icon}</span>
                                     <div>
-                                        <strong style="color: #0f172a;">{item["task"]}</strong>{automated_badge}
-                                        <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">{item["description"]}</p>
+                                        <strong style="color: #0f172a;">{task_escaped}</strong>{automated_badge}
+                                        <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">{desc_escaped}</p>
                                     </div>
                                 </div>
                                 <div style="margin-top: 8px; display: flex; gap: 16px; align-items: center;">
@@ -5606,6 +5617,186 @@ else:  # portal_mode == 'klant'
             """, unsafe_allow_html=True)
 
         with tab5:
+            st.markdown("### 📝 Toelichting op de Jaarrekening")
+            st.markdown("*Vul hier de verplichte en optionele toelichtingen in voor de jaarrekening*")
+
+            # Initialize session state for toelichtingen
+            if "jr_toelichtingen" not in st.session_state:
+                st.session_state.jr_toelichtingen = {
+                    "grondslagen": {
+                        "algemeen": "De jaarrekening is opgesteld in overeenstemming met de bepalingen van Titel 9 Boek 2 BW en de stellige uitspraken van de Richtlijnen voor de jaarverslaggeving voor kleine rechtspersonen.",
+                        "waardering_activa": "Materiële vaste activa worden gewaardeerd tegen verkrijgingsprijs of vervaardigingsprijs verminderd met de cumulatieve afschrijvingen.",
+                        "waardering_passiva": "Voorzieningen worden gewaardeerd tegen nominale waarde.",
+                        "resultaatbepaling": "Het resultaat wordt bepaald als het verschil tussen de netto-omzet en de kosten en andere lasten van het jaar."
+                    },
+                    "vaste_activa": "",
+                    "vlottende_activa": "",
+                    "eigen_vermogen": "",
+                    "voorzieningen": "",
+                    "langlopende_schulden": "",
+                    "kortlopende_schulden": "",
+                    "niet_in_balans": "Er zijn geen niet in de balans opgenomen verplichtingen.",
+                    "gebeurtenissen_na_balansdatum": "Er hebben zich geen gebeurtenissen na balansdatum voorgedaan die van invloed zijn op de jaarrekening.",
+                    "personeelsleden": f"Het gemiddeld aantal werknemers in {selected_year} bedroeg 12 FTE.",
+                    "bestuurders_bezoldiging": "",
+                    "overig": ""
+                }
+
+            # Grondslagen section
+            st.markdown("#### 📋 Grondslagen voor waardering en resultaatbepaling")
+
+            with st.expander("Algemene grondslagen", expanded=True):
+                st.session_state.jr_toelichtingen["grondslagen"]["algemeen"] = st.text_area(
+                    "Algemene toelichting",
+                    value=st.session_state.jr_toelichtingen["grondslagen"]["algemeen"],
+                    height=100,
+                    key="toel_algemeen"
+                )
+
+            with st.expander("Grondslagen voor waardering van activa"):
+                st.session_state.jr_toelichtingen["grondslagen"]["waardering_activa"] = st.text_area(
+                    "Waardering activa",
+                    value=st.session_state.jr_toelichtingen["grondslagen"]["waardering_activa"],
+                    height=100,
+                    key="toel_activa"
+                )
+
+            with st.expander("Grondslagen voor waardering van passiva"):
+                st.session_state.jr_toelichtingen["grondslagen"]["waardering_passiva"] = st.text_area(
+                    "Waardering passiva",
+                    value=st.session_state.jr_toelichtingen["grondslagen"]["waardering_passiva"],
+                    height=100,
+                    key="toel_passiva"
+                )
+
+            with st.expander("Grondslagen voor resultaatbepaling"):
+                st.session_state.jr_toelichtingen["grondslagen"]["resultaatbepaling"] = st.text_area(
+                    "Resultaatbepaling",
+                    value=st.session_state.jr_toelichtingen["grondslagen"]["resultaatbepaling"],
+                    height=100,
+                    key="toel_resultaat"
+                )
+
+            st.markdown("---")
+            st.markdown("#### 📊 Toelichting op de balans")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Activa**")
+                st.session_state.jr_toelichtingen["vaste_activa"] = st.text_area(
+                    "Vaste activa",
+                    value=st.session_state.jr_toelichtingen["vaste_activa"],
+                    height=80,
+                    key="toel_vaste_activa",
+                    placeholder="Toelichting op vaste activa..."
+                )
+                st.session_state.jr_toelichtingen["vlottende_activa"] = st.text_area(
+                    "Vlottende activa",
+                    value=st.session_state.jr_toelichtingen["vlottende_activa"],
+                    height=80,
+                    key="toel_vlottende_activa",
+                    placeholder="Toelichting op vlottende activa..."
+                )
+
+            with col2:
+                st.markdown("**Passiva**")
+                st.session_state.jr_toelichtingen["eigen_vermogen"] = st.text_area(
+                    "Eigen vermogen",
+                    value=st.session_state.jr_toelichtingen["eigen_vermogen"],
+                    height=80,
+                    key="toel_eigen_vermogen",
+                    placeholder="Toelichting op eigen vermogen..."
+                )
+                st.session_state.jr_toelichtingen["voorzieningen"] = st.text_area(
+                    "Voorzieningen",
+                    value=st.session_state.jr_toelichtingen["voorzieningen"],
+                    height=80,
+                    key="toel_voorzieningen",
+                    placeholder="Toelichting op voorzieningen..."
+                )
+
+            col3, col4 = st.columns(2)
+            with col3:
+                st.session_state.jr_toelichtingen["langlopende_schulden"] = st.text_area(
+                    "Langlopende schulden",
+                    value=st.session_state.jr_toelichtingen["langlopende_schulden"],
+                    height=80,
+                    key="toel_langlopend",
+                    placeholder="Toelichting op langlopende schulden..."
+                )
+            with col4:
+                st.session_state.jr_toelichtingen["kortlopende_schulden"] = st.text_area(
+                    "Kortlopende schulden",
+                    value=st.session_state.jr_toelichtingen["kortlopende_schulden"],
+                    height=80,
+                    key="toel_kortlopend",
+                    placeholder="Toelichting op kortlopende schulden..."
+                )
+
+            st.markdown("---")
+            st.markdown("#### ⚠️ Verplichte vermeldingen")
+
+            st.session_state.jr_toelichtingen["niet_in_balans"] = st.text_area(
+                "Niet in de balans opgenomen verplichtingen",
+                value=st.session_state.jr_toelichtingen["niet_in_balans"],
+                height=80,
+                key="toel_niet_balans"
+            )
+
+            st.session_state.jr_toelichtingen["gebeurtenissen_na_balansdatum"] = st.text_area(
+                "Gebeurtenissen na balansdatum",
+                value=st.session_state.jr_toelichtingen["gebeurtenissen_na_balansdatum"],
+                height=80,
+                key="toel_gebeurtenissen"
+            )
+
+            col5, col6 = st.columns(2)
+            with col5:
+                st.session_state.jr_toelichtingen["personeelsleden"] = st.text_area(
+                    "Personeelsleden (gemiddeld aantal)",
+                    value=st.session_state.jr_toelichtingen["personeelsleden"],
+                    height=60,
+                    key="toel_personeel"
+                )
+            with col6:
+                st.session_state.jr_toelichtingen["bestuurders_bezoldiging"] = st.text_area(
+                    "Bezoldiging bestuurders",
+                    value=st.session_state.jr_toelichtingen["bestuurders_bezoldiging"],
+                    height=60,
+                    key="toel_bezoldiging",
+                    placeholder="Indien van toepassing..."
+                )
+
+            st.markdown("---")
+            st.session_state.jr_toelichtingen["overig"] = st.text_area(
+                "Overige toelichtingen",
+                value=st.session_state.jr_toelichtingen["overig"],
+                height=100,
+                key="toel_overig",
+                placeholder="Eventuele aanvullende toelichtingen..."
+            )
+
+            # Save button
+            save_col1, save_col2 = st.columns([1, 4])
+            with save_col1:
+                if st.button("💾 Opslaan", key="save_toelichtingen", type="primary", use_container_width=True):
+                    st.success("✅ Toelichtingen opgeslagen!")
+
+            # Status indicator
+            toel_status = current_statement.get("components", {}).get("toelichting", {}).get("status", "pending")
+            status_colors = {"concept": "#f59e0b", "definitief": "#10b981", "pending": "#64748b"}
+            status_labels = {"concept": "Concept", "definitief": "Definitief", "pending": "In afwachting"}
+            toel_color = status_colors.get(toel_status, "#64748b")
+            toel_label = status_labels.get(toel_status, "Onbekend")
+            st.markdown(f"""
+            <div style="margin-top: 20px; padding: 12px 16px; background: {toel_color}15; border-radius: 8px; border-left: 4px solid {toel_color};">
+                <span style="color: {toel_color}; font-weight: 600;">
+                    Status: {toel_label}
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with tab6:
             st.markdown("### ✅ Goedkeuringsproces")
             st.markdown("*Volg hier de status van het goedkeuringsproces door de verschillende stakeholders*")
 
@@ -5688,7 +5879,7 @@ else:  # portal_mode == 'klant'
                     if st.button("💬 Opmerking Toevoegen", key="add_comment", use_container_width=True):
                         st.info("💬 Commentaar functie geopend...")
 
-        with tab6:
+        with tab7:
             st.markdown("### 📤 KvK Indiening (SBR)")
             st.markdown("*Dien de vastgestelde jaarrekening in bij de Kamer van Koophandel via Standard Business Reporting*")
 
