@@ -81,6 +81,7 @@ st.markdown("""
     .agent-luna { border-left-color: #3b82f6; background: linear-gradient(to right, rgba(59,130,246,0.05), white); }
     .agent-alex { border-left-color: #ec4899; background: linear-gradient(to right, rgba(236,72,153,0.05), white); }
     .agent-mira { border-left-color: #06b6d4; background: linear-gradient(to right, rgba(6,182,212,0.05), white); }
+    .agent-vera { border-left-color: #7c3aed; background: linear-gradient(to right, rgba(124,58,237,0.05), white); }
 
     /* Enhanced status badges with icons */
     .status-active {
@@ -762,6 +763,16 @@ AI_AGENTS = {
         "accuracy": 99.1,
         "description": "Bewaakt maand-/kwartaalafsluitingen, signaleert budgetafwijkingen en coördineert checklist",
         "odoo_link": "Accounting & Reconciliation"
+    },
+    "VERA": {
+        "full_name": "Verification & Evaluation for Reporting Assurance",
+        "role": "Jaarrekening",
+        "color": "#7c3aed",
+        "status": "Actief",
+        "processed_today": 3,
+        "accuracy": 99.5,
+        "description": "Stelt jaarrekeningen op volgens NL wet- en regelgeving, begeleidt goedkeuringsproces en KvK-deponering",
+        "odoo_link": "Accounting & Financial Reports"
     }
 }
 
@@ -1401,6 +1412,526 @@ CLOSING_HISTORY = [
 ]
 
 # ============================================
+# ANNUAL STATEMENT DATA (VERA Agent) - Jaarrekening
+# ============================================
+
+# Company size classification according to Dutch law (BW2 Title 9)
+# Thresholds as of 2024 (updated periodically by EU directives)
+COMPANY_SIZE_THRESHOLDS = {
+    "micro": {
+        "name": "Micro-onderneming",
+        "balanstotaal_max": 450000,
+        "netto_omzet_max": 900000,
+        "werknemers_max": 10,
+        "requirements": {
+            "balans": "Verkort",
+            "wv_rekening": "Verkort",
+            "toelichting": "Zeer beperkt",
+            "bestuursverslag": "Niet verplicht",
+            "accountantsverklaring": "Niet verplicht",
+            "publicatie": "Alleen verkort balans",
+            "sbr_taxonomy": "NT16"
+        },
+        "description": "Voldoet aan minimaal 2 van 3 criteria: balanstotaal ≤ €450.000, netto-omzet ≤ €900.000, werknemers ≤ 10"
+    },
+    "klein": {
+        "name": "Kleine rechtspersoon",
+        "balanstotaal_max": 7500000,
+        "netto_omzet_max": 15000000,
+        "werknemers_max": 50,
+        "requirements": {
+            "balans": "Verkort toegestaan",
+            "wv_rekening": "Verkort toegestaan",
+            "toelichting": "Beperkt",
+            "bestuursverslag": "Niet verplicht",
+            "accountantsverklaring": "Niet verplicht",
+            "publicatie": "Verkort balans + beperkte toelichting",
+            "sbr_taxonomy": "NT16"
+        },
+        "description": "Voldoet aan minimaal 2 van 3 criteria: balanstotaal ≤ €7,5M, netto-omzet ≤ €15M, werknemers ≤ 50"
+    },
+    "middelgroot": {
+        "name": "Middelgrote rechtspersoon",
+        "balanstotaal_max": 25000000,
+        "netto_omzet_max": 50000000,
+        "werknemers_max": 250,
+        "requirements": {
+            "balans": "Volledig",
+            "wv_rekening": "Verkort toegestaan",
+            "toelichting": "Uitgebreid",
+            "bestuursverslag": "Verplicht",
+            "accountantsverklaring": "Verplicht (beoordelingsverklaring toegestaan)",
+            "publicatie": "Volledig (zonder WV mag)",
+            "sbr_taxonomy": "NT16"
+        },
+        "description": "Voldoet aan minimaal 2 van 3 criteria: balanstotaal ≤ €25M, netto-omzet ≤ €50M, werknemers ≤ 250"
+    },
+    "groot": {
+        "name": "Grote rechtspersoon",
+        "balanstotaal_max": None,
+        "netto_omzet_max": None,
+        "werknemers_max": None,
+        "requirements": {
+            "balans": "Volledig",
+            "wv_rekening": "Volledig",
+            "toelichting": "Volledig",
+            "bestuursverslag": "Verplicht + uitgebreid",
+            "accountantsverklaring": "Verplicht (controleverklaring)",
+            "publicatie": "Volledig inclusief WV",
+            "sbr_taxonomy": "NT16"
+        },
+        "description": "Overschrijdt 2 van 3 criteria van middelgrote rechtspersoon op twee opeenvolgende balansdata"
+    }
+}
+
+# Annual statement workflow stages
+ANNUAL_STATEMENT_WORKFLOW = {
+    "stages": [
+        {
+            "id": "concept",
+            "name": "Concept Opstellen",
+            "description": "Initiële jaarrekening wordt opgesteld door VERA",
+            "responsible": "VERA",
+            "requires_approval": False,
+            "next_stage": "review_accountant"
+        },
+        {
+            "id": "review_accountant",
+            "name": "Review Accountant",
+            "description": "Controle en beoordeling door de accountant",
+            "responsible": "Accountant",
+            "requires_approval": True,
+            "approval_roles": ["Senior Accountant", "Managing Partner"],
+            "next_stage": "review_bestuur"
+        },
+        {
+            "id": "review_bestuur",
+            "name": "Review Bestuur",
+            "description": "Review en ondertekening door het bestuur/directie",
+            "responsible": "Bestuur",
+            "requires_approval": True,
+            "approval_roles": ["Directeur", "Bestuurder"],
+            "next_stage": "vaststelling_ava"
+        },
+        {
+            "id": "vaststelling_ava",
+            "name": "Vaststelling AVA",
+            "description": "Goedkeuring en vaststelling door de Algemene Vergadering van Aandeelhouders",
+            "responsible": "AVA",
+            "requires_approval": True,
+            "approval_roles": ["Aandeelhouders"],
+            "next_stage": "deponering"
+        },
+        {
+            "id": "deponering",
+            "name": "Deponering KvK",
+            "description": "Indiening bij de Kamer van Koophandel via SBR",
+            "responsible": "VERA",
+            "requires_approval": False,
+            "next_stage": "afgerond"
+        },
+        {
+            "id": "afgerond",
+            "name": "Afgerond",
+            "description": "Jaarrekening is gepubliceerd en gedeponeerd",
+            "responsible": None,
+            "requires_approval": False,
+            "next_stage": None
+        }
+    ]
+}
+
+# Demo annual statement data
+ANNUAL_STATEMENTS = {
+    "2024": {
+        "boekjaar": "2024",
+        "status": "review_accountant",
+        "company_size": "klein",
+        "created_date": "2025-01-15",
+        "deadline_deponering": "2025-12-31",  # Normally within 12 months after year end
+        "deadline_vaststelling": "2025-06-30",  # Normally within 6 months after year end
+        "current_reviewer": "Mark de Vries",
+        "approval_history": [
+            {"stage": "concept", "date": "2025-01-15", "user": "VERA", "action": "Concept opgesteld", "notes": "Automatisch gegenereerd op basis van grootboekgegevens"},
+            {"stage": "review_accountant", "date": "2025-01-20", "user": "Mark de Vries", "action": "In review genomen", "notes": "Start controle jaarrekening"}
+        ],
+        "components": {
+            "balans": {"status": "concept", "last_updated": "2025-01-15"},
+            "wv_rekening": {"status": "concept", "last_updated": "2025-01-15"},
+            "toelichting": {"status": "concept", "last_updated": "2025-01-15"},
+            "bestuursverslag": {"status": "niet_vereist", "last_updated": None},
+            "accountantsverklaring": {"status": "niet_vereist", "last_updated": None},
+            "overige_gegevens": {"status": "concept", "last_updated": "2025-01-15"}
+        },
+        "financials": {
+            "balanstotaal": 848500,
+            "netto_omzet": 612500,
+            "resultaat": 89400,
+            "eigen_vermogen": 474400,
+            "werknemers": 8
+        },
+        "issues": [
+            {"id": "JR-001", "type": "aandachtspunt", "severity": "warning", "title": "Voorziening dubieuze debiteuren", "description": "Beoordeel of voorziening toereikend is gezien 3 facturen > 60 dagen", "status": "open"},
+            {"id": "JR-002", "type": "verificatie", "severity": "info", "title": "Afschrijvingsmethode machines", "description": "Bevestig dat lineaire afschrijving nog steeds passend is", "status": "open"},
+        ],
+        "kvk_submission": None
+    },
+    "2023": {
+        "boekjaar": "2023",
+        "status": "afgerond",
+        "company_size": "klein",
+        "created_date": "2024-01-20",
+        "deadline_deponering": "2024-12-31",
+        "deadline_vaststelling": "2024-06-30",
+        "current_reviewer": None,
+        "approval_history": [
+            {"stage": "concept", "date": "2024-01-20", "user": "VERA", "action": "Concept opgesteld", "notes": "Automatisch gegenereerd"},
+            {"stage": "review_accountant", "date": "2024-02-15", "user": "Mark de Vries", "action": "Goedgekeurd", "notes": "Geen materiële bevindingen"},
+            {"stage": "review_bestuur", "date": "2024-03-01", "user": "Jan Vermeer", "action": "Ondertekend", "notes": ""},
+            {"stage": "vaststelling_ava", "date": "2024-04-15", "user": "AVA", "action": "Vastgesteld", "notes": "Unaniem goedgekeurd"},
+            {"stage": "deponering", "date": "2024-04-20", "user": "VERA", "action": "Gedeponeerd", "notes": "SBR indiening succesvol"}
+        ],
+        "components": {
+            "balans": {"status": "definitief", "last_updated": "2024-04-15"},
+            "wv_rekening": {"status": "definitief", "last_updated": "2024-04-15"},
+            "toelichting": {"status": "definitief", "last_updated": "2024-04-15"},
+            "bestuursverslag": {"status": "niet_vereist", "last_updated": None},
+            "accountantsverklaring": {"status": "niet_vereist", "last_updated": None},
+            "overige_gegevens": {"status": "definitief", "last_updated": "2024-04-15"}
+        },
+        "financials": {
+            "balanstotaal": 795000,
+            "netto_omzet": 545200,
+            "resultaat": 72500,
+            "eigen_vermogen": 385000,
+            "werknemers": 7
+        },
+        "issues": [],
+        "kvk_submission": {
+            "submission_date": "2024-04-20",
+            "kvk_nummer": "12345678",
+            "sbr_reference": "SBR-2024-001234567",
+            "status": "geaccepteerd",
+            "confirmation_date": "2024-04-21"
+        }
+    }
+}
+
+# Annual statement checklist
+ANNUAL_STATEMENT_CHECKLIST = [
+    {
+        "id": "JRC-001",
+        "category": "Voorbereiding",
+        "task": "Proefbalans afstemmen",
+        "description": "Controleer dat de proefbalans sluitend is en alle periodes zijn afgesloten",
+        "status": "completed",
+        "responsible_agent": "MIRA",
+        "automated": True,
+        "completion_date": "2025-01-10"
+    },
+    {
+        "id": "JRC-002",
+        "category": "Voorbereiding",
+        "task": "Intercompany afstemmen",
+        "description": "Stem intercompany vorderingen/schulden af (indien van toepassing)",
+        "status": "not_applicable",
+        "responsible_agent": "MIRA",
+        "automated": True,
+        "completion_date": None
+    },
+    {
+        "id": "JRC-003",
+        "category": "Activa",
+        "task": "Vaste activa controle",
+        "description": "Verifieer boekwaarden, afschrijvingen en eventuele bijzondere waardeverminderingen",
+        "status": "completed",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": "2025-01-12"
+    },
+    {
+        "id": "JRC-004",
+        "category": "Activa",
+        "task": "Voorraadwaardering",
+        "description": "Controleer voorraadwaardering tegen kostprijs of lagere marktwaarde",
+        "status": "completed",
+        "responsible_agent": "NOVA",
+        "automated": True,
+        "completion_date": "2025-01-12"
+    },
+    {
+        "id": "JRC-005",
+        "category": "Activa",
+        "task": "Debiteuren analyse",
+        "description": "Beoordeel inbaarheid en bepaal voorziening dubieuze debiteuren",
+        "status": "attention",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": None,
+        "notes": "3 facturen > 60 dagen - voorziening evalueren"
+    },
+    {
+        "id": "JRC-006",
+        "category": "Passiva",
+        "task": "Eigen vermogen mutaties",
+        "description": "Verwerk resultaatbestemming vorig boekjaar en dividenduitkeringen",
+        "status": "completed",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": "2025-01-13"
+    },
+    {
+        "id": "JRC-007",
+        "category": "Passiva",
+        "task": "Voorzieningen beoordelen",
+        "description": "Controleer of voorzieningen toereikend en niet te hoog zijn",
+        "status": "completed",
+        "responsible_agent": "VERA",
+        "automated": False,
+        "completion_date": "2025-01-14"
+    },
+    {
+        "id": "JRC-008",
+        "category": "Passiva",
+        "task": "Langlopende schulden",
+        "description": "Verifieer saldi met leningovereenkomsten en splits kort/langlopend",
+        "status": "completed",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": "2025-01-14"
+    },
+    {
+        "id": "JRC-009",
+        "category": "Resultaat",
+        "task": "Omzet verantwoording",
+        "description": "Controleer omzetverantwoording volgens RJ 270",
+        "status": "completed",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": "2025-01-15"
+    },
+    {
+        "id": "JRC-010",
+        "category": "Resultaat",
+        "task": "Kosten cut-off",
+        "description": "Verifieer dat kosten in juiste periode zijn verantwoord",
+        "status": "completed",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": "2025-01-15"
+    },
+    {
+        "id": "JRC-011",
+        "category": "Fiscaal",
+        "task": "Belastingpositie",
+        "description": "Bereken acute belastingschuld en latente belastingen",
+        "status": "in_progress",
+        "responsible_agent": "SAGE",
+        "automated": False,
+        "completion_date": None,
+        "notes": "Wacht op definitieve Vpb-berekening"
+    },
+    {
+        "id": "JRC-012",
+        "category": "Toelichting",
+        "task": "Grondslagen opstellen",
+        "description": "Stel waarderingsgrondslagen op conform RJ/BW2",
+        "status": "completed",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": "2025-01-15"
+    },
+    {
+        "id": "JRC-013",
+        "category": "Toelichting",
+        "task": "Niet uit balans blijkende verplichtingen",
+        "description": "Inventariseer en beschrijf off-balance verplichtingen",
+        "status": "pending",
+        "responsible_agent": "VERA",
+        "automated": False,
+        "completion_date": None
+    },
+    {
+        "id": "JRC-014",
+        "category": "Toelichting",
+        "task": "Gebeurtenissen na balansdatum",
+        "description": "Beoordeel gebeurtenissen na balansdatum op impact",
+        "status": "pending",
+        "responsible_agent": "VERA",
+        "automated": False,
+        "completion_date": None
+    },
+    {
+        "id": "JRC-015",
+        "category": "Afsluiting",
+        "task": "Jaarrekening genereren",
+        "description": "Genereer concept jaarrekening in juiste format",
+        "status": "completed",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": "2025-01-15"
+    },
+    {
+        "id": "JRC-016",
+        "category": "Afsluiting",
+        "task": "SBR validatie",
+        "description": "Valideer jaarrekening tegen SBR taxonomie",
+        "status": "pending",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": None
+    },
+    {
+        "id": "JRC-017",
+        "category": "Goedkeuring",
+        "task": "Accountantsreview",
+        "description": "Review door accountant en opstellen werkdocumenten",
+        "status": "in_progress",
+        "responsible_agent": None,
+        "automated": False,
+        "completion_date": None,
+        "notes": "In behandeling bij Mark de Vries"
+    },
+    {
+        "id": "JRC-018",
+        "category": "Goedkeuring",
+        "task": "Bestuursondertekening",
+        "description": "Ondertekening door alle bestuurders",
+        "status": "blocked",
+        "responsible_agent": None,
+        "automated": False,
+        "completion_date": None,
+        "notes": "Wacht op accountantsreview"
+    },
+    {
+        "id": "JRC-019",
+        "category": "Goedkeuring",
+        "task": "AVA vaststelling",
+        "description": "Vaststelling door Algemene Vergadering van Aandeelhouders",
+        "status": "blocked",
+        "responsible_agent": None,
+        "automated": False,
+        "completion_date": None,
+        "notes": "Wacht op bestuursondertekening"
+    },
+    {
+        "id": "JRC-020",
+        "category": "Publicatie",
+        "task": "KvK deponering",
+        "description": "Deponering bij Kamer van Koophandel via SBR",
+        "status": "blocked",
+        "responsible_agent": "VERA",
+        "automated": True,
+        "completion_date": None,
+        "notes": "Wacht op AVA vaststelling"
+    }
+]
+
+# KvK Submission status options
+KVK_SUBMISSION_STATUSES = {
+    "concept": {"label": "Concept", "color": "#64748b", "icon": "📝"},
+    "validating": {"label": "Valideren", "color": "#3b82f6", "icon": "🔄"},
+    "ready_to_submit": {"label": "Klaar voor indiening", "color": "#f59e0b", "icon": "📤"},
+    "submitted": {"label": "Ingediend", "color": "#8b5cf6", "icon": "📨"},
+    "processing": {"label": "In behandeling KvK", "color": "#06b6d4", "icon": "⏳"},
+    "geaccepteerd": {"label": "Geaccepteerd", "color": "#10b981", "icon": "✅"},
+    "afgewezen": {"label": "Afgewezen", "color": "#ef4444", "icon": "❌"},
+    "correctie_nodig": {"label": "Correctie nodig", "color": "#f59e0b", "icon": "⚠️"}
+}
+
+# Balance sheet structure for annual statement
+ANNUAL_BALANS = {
+    "activa": {
+        "vaste_activa": {
+            "name": "Vaste activa",
+            "items": [
+                {"rgs": "BIvaMatTer", "name": "Terreinen", "amount": 125000},
+                {"rgs": "BIvaMatBeg", "name": "Bedrijfsgebouwen", "amount": 285000},
+                {"rgs": "BIvaMatMae", "name": "Machines en installaties", "amount": 95000},
+                {"rgs": "BIvaMatTrm", "name": "Transportmiddelen", "amount": 68000}
+            ],
+            "subtotal": 573000
+        },
+        "vlottende_activa": {
+            "name": "Vlottende activa",
+            "items": [
+                {"rgs": "BVrdVor", "name": "Voorraden", "amount": 42000},
+                {"rgs": "BVorDebHad", "name": "Vorderingen op handelsdebiteuren", "amount": 142000},
+                {"rgs": "BVorOvr", "name": "Overige vorderingen", "amount": 3000},
+                {"rgs": "BLimBan", "name": "Liquide middelen", "amount": 88500}
+            ],
+            "subtotal": 275500
+        }
+    },
+    "passiva": {
+        "eigen_vermogen": {
+            "name": "Eigen vermogen",
+            "items": [
+                {"rgs": "BEivGok", "name": "Gestort kapitaal", "amount": 100000},
+                {"rgs": "BEivOvr", "name": "Overige reserves", "amount": 285000},
+                {"rgs": "BEivWin", "name": "Onverdeeld resultaat boekjaar", "amount": 89400}
+            ],
+            "subtotal": 474400
+        },
+        "langlopende_schulden": {
+            "name": "Langlopende schulden",
+            "items": [
+                {"rgs": "BLasLls", "name": "Schulden aan kredietinstellingen", "amount": 180000}
+            ],
+            "subtotal": 180000
+        },
+        "kortlopende_schulden": {
+            "name": "Kortlopende schulden",
+            "items": [
+                {"rgs": "BSchCreHan", "name": "Crediteuren", "amount": 78000},
+                {"rgs": "BSchBelBtw", "name": "Omzetbelasting", "amount": 45000},
+                {"rgs": "BSchBelLhe", "name": "Loonheffing", "amount": 18000},
+                {"rgs": "BSchOvrOvs", "name": "Overige schulden", "amount": 53100}
+            ],
+            "subtotal": 194100
+        }
+    },
+    "totaal_activa": 848500,
+    "totaal_passiva": 848500
+}
+
+# Profit and Loss for annual statement
+ANNUAL_WV = {
+    "netto_omzet": {"name": "Netto-omzet", "rgs": "WOmzNet", "amount": 612500},
+    "overige_opbrengsten": {"name": "Overige bedrijfsopbrengsten", "rgs": "WOmzOov", "amount": 8500},
+    "totaal_opbrengsten": 621000,
+    "kosten": {
+        "items": [
+            {"rgs": "WIkworGro", "name": "Grond- en hulpstoffen", "amount": -185000},
+            {"rgs": "WIkworUitworInh", "name": "Uitbesteed werk", "amount": -95000},
+            {"rgs": "WPersLonSal", "name": "Lonen en salarissen", "amount": -180000},
+            {"rgs": "WPersSocLas", "name": "Sociale lasten", "amount": -42000},
+            {"rgs": "WPersPenLas", "name": "Pensioenlasten", "amount": -18000},
+            {"rgs": "WBehHuiHur", "name": "Huisvestingskosten", "amount": -44500},
+            {"rgs": "WBehOvr", "name": "Overige bedrijfskosten", "amount": -42400}
+        ],
+        "subtotal": -606900
+    },
+    "afschrijvingen": {
+        "items": [
+            {"rgs": "WBehAutAfsTrm", "name": "Afschrijvingen materiële vaste activa", "amount": -23500}
+        ],
+        "subtotal": -23500
+    },
+    "bedrijfsresultaat": -9400,
+    "financiele_baten_lasten": {
+        "items": [
+            {"rgs": "WFinRenRba", "name": "Rentelasten", "amount": -4200},
+            {"rgs": "WFinRenOba", "name": "Rentebaten", "amount": 700}
+        ],
+        "subtotal": -3500
+    },
+    "resultaat_voor_belasting": 102800,
+    "belastingen": {"name": "Vennootschapsbelasting", "rgs": "WBelBel", "amount": -13400},
+    "resultaat_na_belasting": 89400
+}
+
+# ============================================
 # HELPER FUNCTIONS
 # ============================================
 
@@ -1670,6 +2201,7 @@ with st.sidebar:
         fiscaal_options = {
             "🧾 BTW & ICP": "btw",
             "🏛️ Vennootschapsbelasting": "vpb",
+            "📑 Jaarrekening": "annual_statement",
         }
 
         for label, view in fiscaal_options.items():
@@ -4420,6 +4952,892 @@ else:  # portal_mode == 'klant'
                 <strong style="color: #f59e0b;">💡 SAGE - Financieringsadvies</strong>
                 <p style="margin: 8px 0 0 0;">Het Rabobank bedrijfskrediet loopt eind 2026 af. Overweeg tijdig herfinanciering als de kredietbehoefte blijft bestaan.</p>
                 <p style="color: #64748b;">De huidige schuldgraad (Debt/Equity ratio) is gezond. Er is ruimte voor aanvullende financiering indien nodig voor de geplande investeringen.</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    elif st.session_state.current_view == 'annual_statement':
+        # ANNUAL STATEMENT - VERA Agent View (Jaarrekening)
+        st.markdown("""
+        <div style="margin-bottom: 24px;">
+            <h1 style="color: #0f172a; margin: 0; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 32px;">📑</span> Jaarrekening
+            </h1>
+            <p style="color: #64748b; font-size: 15px; margin: 8px 0 0 0;">
+                <strong>{}</strong> &nbsp;•&nbsp; Beheerd door <span style="color: #7c3aed; font-weight: 600;">VERA</span>
+            </p>
+        </div>
+        """.format(current_client['name']), unsafe_allow_html=True)
+
+        # Year selector
+        st.markdown("### 📆 Selecteer Boekjaar")
+        col1, col2, col3 = st.columns([2, 2, 2])
+
+        with col1:
+            available_years = list(ANNUAL_STATEMENTS.keys())
+            selected_year = st.selectbox("Boekjaar", available_years, key="annual_statement_year")
+
+        current_statement = ANNUAL_STATEMENTS.get(selected_year, list(ANNUAL_STATEMENTS.values())[0])
+
+        # Determine company size and requirements
+        company_size_key = current_statement.get("company_size", "klein")
+        company_size_info = COMPANY_SIZE_THRESHOLDS.get(company_size_key, COMPANY_SIZE_THRESHOLDS["klein"])
+
+        with col2:
+            st.markdown(f"""
+            <div style="padding-top: 25px;">
+                <span style="background: #7c3aed; color: white; padding: 6px 16px; border-radius: 20px; font-weight: 600;">
+                    {company_size_info['name']}
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Find current workflow stage
+        current_stage_id = current_statement.get("status", "concept")
+        current_stage_info = None
+        current_stage_index = 0
+        for idx, stage in enumerate(ANNUAL_STATEMENT_WORKFLOW["stages"]):
+            if stage["id"] == current_stage_id:
+                current_stage_info = stage
+                current_stage_index = idx
+                break
+
+        with col3:
+            stage_colors = {
+                "concept": "#64748b",
+                "review_accountant": "#f59e0b",
+                "review_bestuur": "#3b82f6",
+                "vaststelling_ava": "#8b5cf6",
+                "deponering": "#06b6d4",
+                "afgerond": "#10b981"
+            }
+            stage_color = stage_colors.get(current_stage_id, "#64748b")
+            st.markdown(f"""
+            <div style="padding-top: 25px;">
+                <span style="background: {stage_color}; color: white; padding: 6px 16px; border-radius: 20px; font-weight: 600;">
+                    {current_stage_info['name'] if current_stage_info else 'Onbekend'}
+                </span>
+                <span style="color: #64748b; margin-left: 12px; font-size: 13px;">
+                    Deadline: {current_statement.get('deadline_vaststelling', 'N/A')}
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # Workflow Progress Indicator
+        st.markdown("### 🔄 Goedkeuringsproces")
+
+        workflow_cols = st.columns(6)
+        for idx, stage in enumerate(ANNUAL_STATEMENT_WORKFLOW["stages"]):
+            with workflow_cols[idx]:
+                if idx < current_stage_index:
+                    # Completed
+                    icon = "✅"
+                    bg_color = "#dcfce7"
+                    border_color = "#10b981"
+                    text_color = "#166534"
+                elif idx == current_stage_index:
+                    # Current
+                    icon = "🔄"
+                    bg_color = "#fef3c7"
+                    border_color = "#f59e0b"
+                    text_color = "#92400e"
+                else:
+                    # Pending
+                    icon = "⏳"
+                    bg_color = "#f1f5f9"
+                    border_color = "#94a3b8"
+                    text_color = "#64748b"
+
+                st.markdown(f"""
+                <div style="text-align: center; padding: 12px; background: {bg_color}; border-radius: 12px; border: 2px solid {border_color};">
+                    <span style="font-size: 24px;">{icon}</span>
+                    <p style="color: {text_color}; font-size: 11px; margin: 8px 0 0 0; font-weight: 600;">{stage['name']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # Summary KPIs
+        financials = current_statement.get("financials", {})
+        completed_tasks = len([c for c in ANNUAL_STATEMENT_CHECKLIST if c["status"] == "completed"])
+        attention_tasks = len([c for c in ANNUAL_STATEMENT_CHECKLIST if c["status"] == "attention"])
+        pending_tasks = len([c for c in ANNUAL_STATEMENT_CHECKLIST if c["status"] in ["pending", "in_progress"]])
+        blocked_tasks = len([c for c in ANNUAL_STATEMENT_CHECKLIST if c["status"] == "blocked"])
+        total_tasks = len([c for c in ANNUAL_STATEMENT_CHECKLIST if c["status"] != "not_applicable"])
+
+        col1, col2, col3, col4, col5 = st.columns(5)
+
+        with col1:
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid #7c3aed; text-align: center;">
+                <p class="metric-label">BALANSTOTAAL</p>
+                <p class="metric-value" style="color: #7c3aed; font-size: 22px;">{format_currency(financials.get('balanstotaal', 0))}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid #10b981; text-align: center;">
+                <p class="metric-label">NETTO-OMZET</p>
+                <p class="metric-value" style="color: #10b981; font-size: 22px;">{format_currency(financials.get('netto_omzet', 0))}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col3:
+            result_color = "#10b981" if financials.get('resultaat', 0) >= 0 else "#ef4444"
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid {result_color}; text-align: center;">
+                <p class="metric-label">RESULTAAT</p>
+                <p class="metric-value" style="color: {result_color}; font-size: 22px;">{format_currency(financials.get('resultaat', 0))}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col4:
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid #3b82f6; text-align: center;">
+                <p class="metric-label">EIGEN VERMOGEN</p>
+                <p class="metric-value" style="color: #3b82f6; font-size: 22px;">{format_currency(financials.get('eigen_vermogen', 0))}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col5:
+            st.markdown(f"""
+            <div class="metric-card" style="border-top: 4px solid #06b6d4; text-align: center;">
+                <p class="metric-label">VOORTGANG</p>
+                <p class="metric-value" style="color: #06b6d4; font-size: 22px;">{int(completed_tasks/total_tasks*100) if total_tasks > 0 else 0}%</p>
+                <p style="color: #64748b; font-size: 12px;">{completed_tasks}/{total_tasks} taken</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Main tabs
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 Overzicht", "📋 Checklist", "📈 Balans", "💰 W&V", "✅ Goedkeuring", "📤 KvK Indiening"])
+
+        with tab1:
+            st.markdown("### 📊 Jaarrekening Overzicht")
+
+            # Company size info card
+            st.markdown(f"""
+            <div class="agent-card" style="border-left-color: #7c3aed; background: linear-gradient(to right, rgba(124,58,237,0.05), white);">
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="min-width: 48px; height: 48px; background: rgba(124,58,237,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        🏢
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <strong style="color: #7c3aed; font-size: 16px;">Classificatie: {company_size_info['name']}</strong>
+                                <p style="color: #475569; margin: 8px 0; font-size: 14px;">{company_size_info['description']}</p>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06);">
+                            <div>
+                                <small style="color: #94a3b8;">Balanstotaal grens</small><br>
+                                <strong>≤ {format_currency(company_size_info['balanstotaal_max']) if company_size_info['balanstotaal_max'] else 'Geen'}</strong>
+                            </div>
+                            <div>
+                                <small style="color: #94a3b8;">Netto-omzet grens</small><br>
+                                <strong>≤ {format_currency(company_size_info['netto_omzet_max']) if company_size_info['netto_omzet_max'] else 'Geen'}</strong>
+                            </div>
+                            <div>
+                                <small style="color: #94a3b8;">Werknemers grens</small><br>
+                                <strong>≤ {company_size_info['werknemers_max'] if company_size_info['werknemers_max'] else 'Geen'}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Requirements based on company size
+            st.markdown("#### 📋 Vereisten op basis van bedrijfsgrootte")
+
+            requirements = company_size_info['requirements']
+            req_cols = st.columns(3)
+
+            with req_cols[0]:
+                st.markdown(f"""
+                <div class="metric-card" style="min-height: 140px;">
+                    <p class="metric-label">BALANS</p>
+                    <p style="color: #0f172a; font-weight: 600; font-size: 16px;">{requirements['balans']}</p>
+                    <p class="metric-label" style="margin-top: 16px;">W&V REKENING</p>
+                    <p style="color: #0f172a; font-weight: 600; font-size: 16px;">{requirements['wv_rekening']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with req_cols[1]:
+                st.markdown(f"""
+                <div class="metric-card" style="min-height: 140px;">
+                    <p class="metric-label">BESTUURSVERSLAG</p>
+                    <p style="color: #0f172a; font-weight: 600; font-size: 16px;">{requirements['bestuursverslag']}</p>
+                    <p class="metric-label" style="margin-top: 16px;">ACCOUNTANTSVERKLARING</p>
+                    <p style="color: #0f172a; font-weight: 600; font-size: 16px;">{requirements['accountantsverklaring']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with req_cols[2]:
+                st.markdown(f"""
+                <div class="metric-card" style="min-height: 140px;">
+                    <p class="metric-label">PUBLICATIE</p>
+                    <p style="color: #0f172a; font-weight: 600; font-size: 16px;">{requirements['publicatie']}</p>
+                    <p class="metric-label" style="margin-top: 16px;">SBR TAXONOMIE</p>
+                    <p style="color: #0f172a; font-weight: 600; font-size: 16px;">{requirements['sbr_taxonomy']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Components status
+            st.markdown("---")
+            st.markdown("#### 📂 Onderdelen Jaarrekening")
+
+            components = current_statement.get("components", {})
+            component_labels = {
+                "balans": "Balans",
+                "wv_rekening": "Winst- en verliesrekening",
+                "toelichting": "Toelichting",
+                "bestuursverslag": "Bestuursverslag",
+                "accountantsverklaring": "Accountantsverklaring",
+                "overige_gegevens": "Overige gegevens"
+            }
+
+            comp_cols = st.columns(3)
+            for idx, (key, label) in enumerate(component_labels.items()):
+                with comp_cols[idx % 3]:
+                    comp_data = components.get(key, {"status": "pending", "last_updated": None})
+                    status = comp_data.get("status", "pending")
+
+                    if status == "definitief":
+                        status_color = "#10b981"
+                        status_text = "Definitief"
+                        status_icon = "✅"
+                    elif status == "concept":
+                        status_color = "#f59e0b"
+                        status_text = "Concept"
+                        status_icon = "📝"
+                    elif status == "niet_vereist":
+                        status_color = "#94a3b8"
+                        status_text = "Niet vereist"
+                        status_icon = "➖"
+                    else:
+                        status_color = "#64748b"
+                        status_text = "In afwachting"
+                        status_icon = "⏳"
+
+                    st.markdown(f"""
+                    <div class="invoice-row" style="border-left: 4px solid {status_color};">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-size: 16px; margin-right: 8px;">{status_icon}</span>
+                                <strong>{label}</strong>
+                            </div>
+                            <span style="background: {status_color}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px;">{status_text}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            # Issues
+            issues = current_statement.get("issues", [])
+            if issues:
+                st.markdown("---")
+                st.markdown("#### ⚠️ Aandachtspunten")
+
+                for issue in issues:
+                    severity_color = "#f59e0b" if issue.get("severity") == "warning" else "#3b82f6"
+                    st.markdown(f"""
+                    <div class="alert-card" style="border-left: 5px solid {severity_color};">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <span style="font-size: 18px;">⚠️</span>
+                            <div>
+                                <strong>{issue['title']}</strong>
+                                <p style="color: #475569; margin: 4px 0 0 0; font-size: 14px;">{issue['description']}</p>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        with tab2:
+            st.markdown("### 📋 Jaarrekening Checklist")
+            st.markdown("*Taken worden automatisch gemonitord door VERA en doorgestuurd naar de juiste agent*")
+
+            # Filter
+            filter_col1, filter_col2 = st.columns([1, 3])
+            with filter_col1:
+                jr_status_filter = st.selectbox("Filter", ["Alle", "Voltooid", "Aandacht nodig", "In afwachting", "Geblokkeerd"], key="jr_checklist_filter")
+
+            # Group by category
+            jr_categories = {}
+            for item in ANNUAL_STATEMENT_CHECKLIST:
+                cat = item["category"]
+                if cat not in jr_categories:
+                    jr_categories[cat] = []
+                jr_categories[cat].append(item)
+
+            for category, items in jr_categories.items():
+                # Filter items
+                if jr_status_filter == "Voltooid":
+                    filtered_items = [i for i in items if i["status"] == "completed"]
+                elif jr_status_filter == "Aandacht nodig":
+                    filtered_items = [i for i in items if i["status"] == "attention"]
+                elif jr_status_filter == "In afwachting":
+                    filtered_items = [i for i in items if i["status"] in ["pending", "in_progress"]]
+                elif jr_status_filter == "Geblokkeerd":
+                    filtered_items = [i for i in items if i["status"] == "blocked"]
+                else:
+                    filtered_items = items
+
+                if not filtered_items:
+                    continue
+
+                st.markdown(f"#### {category}")
+
+                for item in filtered_items:
+                    # Status styling
+                    if item["status"] == "completed":
+                        status_icon = "✅"
+                        status_bg = "#dcfce7"
+                        status_border = "#10b981"
+                        status_text = "Voltooid"
+                    elif item["status"] == "attention":
+                        status_icon = "⚠️"
+                        status_bg = "#fef3c7"
+                        status_border = "#f59e0b"
+                        status_text = "Aandacht nodig"
+                    elif item["status"] == "in_progress":
+                        status_icon = "🔄"
+                        status_bg = "#dbeafe"
+                        status_border = "#3b82f6"
+                        status_text = "In behandeling"
+                    elif item["status"] == "pending":
+                        status_icon = "⏳"
+                        status_bg = "#f1f5f9"
+                        status_border = "#64748b"
+                        status_text = "In afwachting"
+                    elif item["status"] == "blocked":
+                        status_icon = "🚫"
+                        status_bg = "#fee2e2"
+                        status_border = "#ef4444"
+                        status_text = "Geblokkeerd"
+                    else:
+                        status_icon = "➖"
+                        status_bg = "#f1f5f9"
+                        status_border = "#94a3b8"
+                        status_text = "N.v.t."
+
+                    agent_color = AI_AGENTS.get(item.get("responsible_agent", ""), {}).get("color", "#64748b")
+                    agent_name = item.get("responsible_agent", "Handmatig") or "Handmatig"
+                    automated_badge = '<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 8px;">AUTO</span>' if item.get("automated") else ""
+
+                    st.markdown(f"""
+                    <div class="invoice-row" style="border-left: 4px solid {status_border}; background: {status_bg};">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span style="font-size: 18px;">{status_icon}</span>
+                                    <div>
+                                        <strong style="color: #0f172a;">{item["task"]}</strong>{automated_badge}
+                                        <p style="color: #64748b; margin: 4px 0 0 0; font-size: 13px;">{item["description"]}</p>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 8px; display: flex; gap: 16px; align-items: center;">
+                                    <span style="color: {agent_color}; font-weight: 600; font-size: 12px;">Agent: {agent_name}</span>
+                                    {f'<span style="color: #64748b; font-size: 11px;">Voltooid: {item.get("completion_date", "")}</span>' if item.get("completion_date") else ""}
+                                </div>
+                                {f'<p style="color: #475569; font-size: 12px; margin: 8px 0 0 0; font-style: italic;">💬 {item.get("notes", "")}</p>' if item.get("notes") else ""}
+                            </div>
+                            <div style="text-align: right; min-width: 120px;">
+                                <span style="background: {status_border}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">{status_text}</span>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("")
+
+        with tab3:
+            st.markdown("### 📈 Balans per 31 december " + selected_year)
+
+            # Balans totals
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("#### Activa")
+
+                # Vaste activa
+                st.markdown("""
+                <div class="rgs-header">Vaste activa</div>
+                """, unsafe_allow_html=True)
+
+                for item in ANNUAL_BALANS["activa"]["vaste_activa"]["items"]:
+                    st.markdown(f"""
+                    <div class="rgs-row">
+                        <span>{item['name']} <small style="color: #94a3b8;">({item['rgs']})</small></span>
+                        <span style="font-weight: 600;">{format_currency(item['amount'])}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div class="rgs-row" style="background: #f1f5f9; font-weight: 600;">
+                    <span>Subtotaal vaste activa</span>
+                    <span>{format_currency(ANNUAL_BALANS["activa"]["vaste_activa"]["subtotal"])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # Vlottende activa
+                st.markdown("""
+                <div class="rgs-header">Vlottende activa</div>
+                """, unsafe_allow_html=True)
+
+                for item in ANNUAL_BALANS["activa"]["vlottende_activa"]["items"]:
+                    st.markdown(f"""
+                    <div class="rgs-row">
+                        <span>{item['name']} <small style="color: #94a3b8;">({item['rgs']})</small></span>
+                        <span style="font-weight: 600;">{format_currency(item['amount'])}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div class="rgs-row" style="background: #f1f5f9; font-weight: 600;">
+                    <span>Subtotaal vlottende activa</span>
+                    <span>{format_currency(ANNUAL_BALANS["activa"]["vlottende_activa"]["subtotal"])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div class="rgs-row rgs-total" style="margin-top: 16px;">
+                    <span>TOTAAL ACTIVA</span>
+                    <span>{format_currency(ANNUAL_BALANS["totaal_activa"])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with col2:
+                st.markdown("#### Passiva")
+
+                # Eigen vermogen
+                st.markdown("""
+                <div class="rgs-header">Eigen vermogen</div>
+                """, unsafe_allow_html=True)
+
+                for item in ANNUAL_BALANS["passiva"]["eigen_vermogen"]["items"]:
+                    st.markdown(f"""
+                    <div class="rgs-row">
+                        <span>{item['name']} <small style="color: #94a3b8;">({item['rgs']})</small></span>
+                        <span style="font-weight: 600;">{format_currency(item['amount'])}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div class="rgs-row" style="background: #f1f5f9; font-weight: 600;">
+                    <span>Subtotaal eigen vermogen</span>
+                    <span>{format_currency(ANNUAL_BALANS["passiva"]["eigen_vermogen"]["subtotal"])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # Langlopende schulden
+                st.markdown("""
+                <div class="rgs-header">Langlopende schulden</div>
+                """, unsafe_allow_html=True)
+
+                for item in ANNUAL_BALANS["passiva"]["langlopende_schulden"]["items"]:
+                    st.markdown(f"""
+                    <div class="rgs-row">
+                        <span>{item['name']} <small style="color: #94a3b8;">({item['rgs']})</small></span>
+                        <span style="font-weight: 600;">{format_currency(item['amount'])}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div class="rgs-row" style="background: #f1f5f9; font-weight: 600;">
+                    <span>Subtotaal langlopende schulden</span>
+                    <span>{format_currency(ANNUAL_BALANS["passiva"]["langlopende_schulden"]["subtotal"])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # Kortlopende schulden
+                st.markdown("""
+                <div class="rgs-header">Kortlopende schulden</div>
+                """, unsafe_allow_html=True)
+
+                for item in ANNUAL_BALANS["passiva"]["kortlopende_schulden"]["items"]:
+                    st.markdown(f"""
+                    <div class="rgs-row">
+                        <span>{item['name']} <small style="color: #94a3b8;">({item['rgs']})</small></span>
+                        <span style="font-weight: 600;">{format_currency(item['amount'])}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div class="rgs-row" style="background: #f1f5f9; font-weight: 600;">
+                    <span>Subtotaal kortlopende schulden</span>
+                    <span>{format_currency(ANNUAL_BALANS["passiva"]["kortlopende_schulden"]["subtotal"])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div class="rgs-row rgs-total" style="margin-top: 16px;">
+                    <span>TOTAAL PASSIVA</span>
+                    <span>{format_currency(ANNUAL_BALANS["totaal_passiva"])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Balance check
+            balance_check = ANNUAL_BALANS["totaal_activa"] == ANNUAL_BALANS["totaal_passiva"]
+            check_color = "#10b981" if balance_check else "#ef4444"
+            check_icon = "✅" if balance_check else "❌"
+
+            st.markdown(f"""
+            <div style="text-align: center; margin-top: 24px; padding: 16px; background: {'#dcfce7' if balance_check else '#fee2e2'}; border-radius: 12px;">
+                <span style="font-size: 24px;">{check_icon}</span>
+                <p style="color: {check_color}; font-weight: 600; margin: 8px 0 0 0;">
+                    {'Balans is sluitend' if balance_check else 'Balans is NIET sluitend - controleer de boekingen'}
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with tab4:
+            st.markdown("### 💰 Winst- en Verliesrekening " + selected_year)
+
+            # W&V Statement
+            st.markdown("""
+            <div class="rgs-header">Bedrijfsopbrengsten</div>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="rgs-row">
+                <span>{ANNUAL_WV['netto_omzet']['name']} <small style="color: #94a3b8;">({ANNUAL_WV['netto_omzet']['rgs']})</small></span>
+                <span style="font-weight: 600;">{format_currency(ANNUAL_WV['netto_omzet']['amount'])}</span>
+            </div>
+            <div class="rgs-row">
+                <span>{ANNUAL_WV['overige_opbrengsten']['name']} <small style="color: #94a3b8;">({ANNUAL_WV['overige_opbrengsten']['rgs']})</small></span>
+                <span style="font-weight: 600;">{format_currency(ANNUAL_WV['overige_opbrengsten']['amount'])}</span>
+            </div>
+            <div class="rgs-row" style="background: #f1f5f9; font-weight: 600;">
+                <span>Totaal bedrijfsopbrengsten</span>
+                <span>{format_currency(ANNUAL_WV['totaal_opbrengsten'])}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown("""
+            <div class="rgs-header">Bedrijfskosten</div>
+            """, unsafe_allow_html=True)
+
+            for item in ANNUAL_WV['kosten']['items']:
+                st.markdown(f"""
+                <div class="rgs-row">
+                    <span>{item['name']} <small style="color: #94a3b8;">({item['rgs']})</small></span>
+                    <span style="font-weight: 600; color: #ef4444;">{format_currency(item['amount'])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="rgs-row" style="background: #f1f5f9; font-weight: 600;">
+                <span>Totaal bedrijfskosten</span>
+                <span style="color: #ef4444;">{format_currency(ANNUAL_WV['kosten']['subtotal'])}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown("""
+            <div class="rgs-header">Afschrijvingen</div>
+            """, unsafe_allow_html=True)
+
+            for item in ANNUAL_WV['afschrijvingen']['items']:
+                st.markdown(f"""
+                <div class="rgs-row">
+                    <span>{item['name']} <small style="color: #94a3b8;">({item['rgs']})</small></span>
+                    <span style="font-weight: 600; color: #ef4444;">{format_currency(item['amount'])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown("""
+            <div class="rgs-header">Financiële baten en lasten</div>
+            """, unsafe_allow_html=True)
+
+            for item in ANNUAL_WV['financiele_baten_lasten']['items']:
+                color = "#ef4444" if item['amount'] < 0 else "#10b981"
+                st.markdown(f"""
+                <div class="rgs-row">
+                    <span>{item['name']} <small style="color: #94a3b8;">({item['rgs']})</small></span>
+                    <span style="font-weight: 600; color: {color};">{format_currency(item['amount'])}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # Results
+            st.markdown(f"""
+            <div class="rgs-row" style="background: #f8fafc; font-weight: 600; font-size: 16px;">
+                <span>Resultaat voor belastingen</span>
+                <span>{format_currency(ANNUAL_WV['resultaat_voor_belasting'])}</span>
+            </div>
+            <div class="rgs-row">
+                <span>{ANNUAL_WV['belastingen']['name']} <small style="color: #94a3b8;">({ANNUAL_WV['belastingen']['rgs']})</small></span>
+                <span style="font-weight: 600; color: #ef4444;">{format_currency(ANNUAL_WV['belastingen']['amount'])}</span>
+            </div>
+            <div class="rgs-row rgs-total" style="font-size: 18px;">
+                <span>RESULTAAT NA BELASTINGEN</span>
+                <span style="color: {'#10b981' if ANNUAL_WV['resultaat_na_belasting'] >= 0 else '#ef4444'};">{format_currency(ANNUAL_WV['resultaat_na_belasting'])}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with tab5:
+            st.markdown("### ✅ Goedkeuringsproces")
+            st.markdown("*Volg hier de status van het goedkeuringsproces door de verschillende stakeholders*")
+
+            # Current stage highlight
+            st.markdown(f"""
+            <div class="agent-card" style="border-left-color: #7c3aed; background: linear-gradient(to right, rgba(124,58,237,0.05), white);">
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="min-width: 48px; height: 48px; background: rgba(124,58,237,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        🔄
+                    </div>
+                    <div>
+                        <strong style="color: #7c3aed; font-size: 16px;">Huidige fase: {current_stage_info['name'] if current_stage_info else 'Onbekend'}</strong>
+                        <p style="color: #475569; margin: 8px 0; font-size: 14px;">{current_stage_info['description'] if current_stage_info else ''}</p>
+                        <p style="color: #64748b; font-size: 13px; margin: 0;">
+                            Verantwoordelijk: <strong>{current_stage_info['responsible'] if current_stage_info else 'N/A'}</strong>
+                            {f" | Huidige reviewer: <strong>{current_statement.get('current_reviewer', 'N/A')}</strong>" if current_statement.get('current_reviewer') else ""}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # Approval history timeline
+            st.markdown("#### 📜 Goedkeuringshistorie")
+
+            approval_history = current_statement.get("approval_history", [])
+
+            if approval_history:
+                for idx, entry in enumerate(approval_history):
+                    is_last = idx == len(approval_history) - 1
+                    line_style = "border-left: 2px solid #e2e8f0; margin-left: 20px; padding-left: 20px;" if not is_last else "margin-left: 20px; padding-left: 20px;"
+
+                    st.markdown(f"""
+                    <div style="{line_style} padding-bottom: 16px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start; margin-left: -31px;">
+                            <div style="min-width: 20px; height: 20px; background: #10b981; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 2px #10b981;"></div>
+                            <div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <strong style="color: #0f172a;">{entry['action']}</strong>
+                                    <span style="background: #f1f5f9; padding: 2px 8px; border-radius: 8px; font-size: 11px; color: #64748b;">{entry['stage']}</span>
+                                </div>
+                                <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0;">
+                                    Door: <strong>{entry['user']}</strong> &nbsp;•&nbsp; {entry['date']}
+                                </p>
+                                {f'<p style="color: #475569; font-size: 13px; margin: 4px 0 0 0; font-style: italic;">"{entry["notes"]}"</p>' if entry.get('notes') else ''}
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Nog geen goedkeuringshistorie beschikbaar.")
+
+            st.markdown("---")
+
+            # Approval actions (only show if in appropriate stage)
+            if current_stage_id not in ["afgerond"]:
+                st.markdown("#### 🎯 Acties")
+
+                action_cols = st.columns(3)
+
+                with action_cols[0]:
+                    if current_stage_id == "review_accountant":
+                        if st.button("✅ Goedkeuren als Accountant", key="approve_accountant", use_container_width=True, type="primary"):
+                            st.success("✅ Jaarrekening goedgekeurd! Doorgestuurd naar bestuur voor ondertekening.")
+                    elif current_stage_id == "review_bestuur":
+                        if st.button("✍️ Ondertekenen als Bestuur", key="sign_board", use_container_width=True, type="primary"):
+                            st.success("✅ Jaarrekening ondertekend! Doorgestuurd naar AVA voor vaststelling.")
+                    elif current_stage_id == "vaststelling_ava":
+                        if st.button("🗳️ Vaststellen door AVA", key="approve_ava", use_container_width=True, type="primary"):
+                            st.success("✅ Jaarrekening vastgesteld! Klaar voor deponering bij KvK.")
+
+                with action_cols[1]:
+                    if current_stage_id in ["review_accountant", "review_bestuur"]:
+                        if st.button("↩️ Terugsturen voor Correctie", key="return_correction", use_container_width=True):
+                            st.warning("⚠️ Jaarrekening teruggestuurd voor correcties.")
+
+                with action_cols[2]:
+                    if st.button("💬 Opmerking Toevoegen", key="add_comment", use_container_width=True):
+                        st.info("💬 Commentaar functie geopend...")
+
+        with tab6:
+            st.markdown("### 📤 KvK Indiening (SBR)")
+            st.markdown("*Dien de vastgestelde jaarrekening in bij de Kamer van Koophandel via Standard Business Reporting*")
+
+            kvk_submission = current_statement.get("kvk_submission")
+
+            if kvk_submission:
+                # Submission exists
+                submission_status = kvk_submission.get("status", "unknown")
+                status_info = KVK_SUBMISSION_STATUSES.get(submission_status, {"label": "Onbekend", "color": "#64748b", "icon": "❓"})
+
+                st.markdown(f"""
+                <div class="agent-card" style="border-left-color: {status_info['color']}; background: linear-gradient(to right, rgba(124,58,237,0.05), white);">
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="min-width: 48px; height: 48px; background: rgba(124,58,237,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                            {status_info['icon']}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <strong style="color: #0f172a; font-size: 16px;">KvK Indiening - {status_info['label']}</strong>
+                                    <p style="color: #475569; margin: 8px 0; font-size: 14px;">
+                                        SBR Referentie: <code>{kvk_submission.get('sbr_reference', 'N/A')}</code>
+                                    </p>
+                                </div>
+                                <span style="background: {status_info['color']}; color: white; padding: 6px 16px; border-radius: 20px; font-weight: 600;">
+                                    {status_info['label']}
+                                </span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06);">
+                                <div>
+                                    <small style="color: #94a3b8;">KvK Nummer</small><br>
+                                    <strong>{kvk_submission.get('kvk_nummer', 'N/A')}</strong>
+                                </div>
+                                <div>
+                                    <small style="color: #94a3b8;">Datum Indiening</small><br>
+                                    <strong>{kvk_submission.get('submission_date', 'N/A')}</strong>
+                                </div>
+                                <div>
+                                    <small style="color: #94a3b8;">Datum Bevestiging</small><br>
+                                    <strong>{kvk_submission.get('confirmation_date', 'N/A')}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            else:
+                # No submission yet
+                can_submit = current_stage_id in ["deponering", "vaststelling_ava"]
+
+                st.markdown(f"""
+                <div class="metric-card" style="border-top: 4px solid {'#7c3aed' if can_submit else '#94a3b8'};">
+                    <div style="text-align: center; padding: 20px;">
+                        <span style="font-size: 48px;">📤</span>
+                        <h3 style="color: #0f172a; margin: 16px 0 8px 0;">KvK Indiening</h3>
+                        <p style="color: #64748b; margin-bottom: 20px;">
+                            {'De jaarrekening is klaar om te worden ingediend bij de Kamer van Koophandel.' if can_submit else 'De jaarrekening moet eerst worden vastgesteld voordat deze kan worden ingediend.'}
+                        </p>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # SBR Validation
+            st.markdown("#### 🔍 SBR Validatie")
+
+            validation_checks = [
+                {"check": "Taxonomie versie (NT16)", "status": "passed", "detail": "Correct format"},
+                {"check": "Verplichte velden balans", "status": "passed", "detail": "Alle velden ingevuld"},
+                {"check": "Verplichte velden W&V", "status": "passed", "detail": "Alle velden ingevuld"},
+                {"check": "KvK nummer validatie", "status": "passed", "detail": "12345678 is geldig"},
+                {"check": "Digitale handtekening", "status": "warning" if current_stage_id != "afgerond" else "passed", "detail": "Wacht op bestuursondertekening" if current_stage_id != "afgerond" else "Ondertekend"},
+                {"check": "Bestandsgrootte", "status": "passed", "detail": "< 10MB limiet"},
+            ]
+
+            for check in validation_checks:
+                if check["status"] == "passed":
+                    icon = "✅"
+                    color = "#10b981"
+                elif check["status"] == "warning":
+                    icon = "⚠️"
+                    color = "#f59e0b"
+                else:
+                    icon = "❌"
+                    color = "#ef4444"
+
+                st.markdown(f"""
+                <div class="rgs-row" style="border-left: 3px solid {color};">
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <span>{icon}</span>
+                        <span><strong>{check['check']}</strong></span>
+                    </div>
+                    <span style="color: #64748b; font-size: 13px;">{check['detail']}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # Submission actions
+            st.markdown("#### 🎯 Acties")
+
+            submission_cols = st.columns(4)
+
+            with submission_cols[0]:
+                if st.button("🔄 Valideer SBR", key="validate_sbr", use_container_width=True):
+                    st.success("✅ SBR validatie geslaagd!")
+
+            with submission_cols[1]:
+                if st.button("👁️ Preview PDF", key="preview_pdf", use_container_width=True):
+                    st.info("📄 PDF preview wordt gegenereerd...")
+
+            with submission_cols[2]:
+                submit_disabled = current_stage_id not in ["deponering", "vaststelling_ava"] or kvk_submission is not None
+                if st.button("📤 Indienen bij KvK", key="submit_kvk", use_container_width=True, type="primary", disabled=submit_disabled):
+                    st.success("✅ Jaarrekening succesvol ingediend bij KvK! SBR referentie: SBR-2025-001234567")
+
+            with submission_cols[3]:
+                if st.button("📥 Download XBRL", key="download_xbrl", use_container_width=True):
+                    st.info("📥 XBRL bestand wordt gedownload...")
+
+            # Deadlines reminder
+            st.markdown("---")
+            st.markdown("#### ⏰ Belangrijke Deadlines")
+
+            deadline_cols = st.columns(2)
+
+            with deadline_cols[0]:
+                vaststelling_deadline = current_statement.get("deadline_vaststelling", "N/A")
+                st.markdown(f"""
+                <div class="alert-card" style="border-left: 5px solid #f59e0b;">
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <span style="font-size: 24px;">📅</span>
+                        <div>
+                            <strong>Deadline Vaststelling AVA</strong>
+                            <p style="color: #475569; margin: 4px 0 0 0; font-size: 18px; font-weight: 600;">{vaststelling_deadline}</p>
+                            <p style="color: #64748b; margin: 4px 0 0 0; font-size: 12px;">Binnen 6 maanden na einde boekjaar (verlengbaar tot 11 maanden)</p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with deadline_cols[1]:
+                deponering_deadline = current_statement.get("deadline_deponering", "N/A")
+                st.markdown(f"""
+                <div class="alert-card" style="border-left: 5px solid #7c3aed;">
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <span style="font-size: 24px;">🏛️</span>
+                        <div>
+                            <strong>Deadline Deponering KvK</strong>
+                            <p style="color: #475569; margin: 4px 0 0 0; font-size: 18px; font-weight: 600;">{deponering_deadline}</p>
+                            <p style="color: #64748b; margin: 4px 0 0 0; font-size: 12px;">Binnen 8 dagen na vaststelling (max 12 maanden na einde boekjaar)</p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # VERA insight
+            st.markdown(f"""
+            <div class="agent-card" style="border-left-color: #7c3aed; background: linear-gradient(to right, rgba(124,58,237,0.05), white); margin-top: 24px;">
+                <strong style="color: #7c3aed;">💡 VERA - Jaarrekening Inzicht</strong>
+                <p style="margin: 8px 0 0 0;">Op basis van de huidige classificatie als '{company_size_info['name']}' is een verkorte balans publicatie toegestaan.
+                Dit beperkt de informatieverplichting naar derden en beschermt concurrentiegevoelige gegevens.</p>
+                <p style="color: #64748b; margin-top: 8px;">Let op: Bij groei kunnen volgend jaar andere publicatie-eisen gelden. Monitor de grenswaardes.</p>
             </div>
             """, unsafe_allow_html=True)
 
